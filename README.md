@@ -23,7 +23,7 @@ Launch 6 terminal sessions in `$GOPATH/src/github.com/larskluge/babl-qa/DEVENV` 
 	
 	T3: $ ./babl-server.sh
 	
-	T4: $ cd $GOPATH/src/github.com/larskluge/babl-qa/ && ./babl-qa --kb queue.babl.sh:9092
+	T4: $ ./babl-qa.sh
 	
 	T5: $ ./kafka-listen-logsqa.sh
 	
