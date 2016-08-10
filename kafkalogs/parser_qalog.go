@@ -1,9 +1,6 @@
-package logs
+package kafkalogs
 
-import (
-	"encoding/json"
-	"fmt"
-)
+import "encoding/json"
 
 type QALog struct {
 	Type          string `json:"type"`
@@ -19,9 +16,6 @@ type QALog struct {
 
 func (qalog *QALog) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &qalog.Z)
-	fmt.Println(qalog.Z)
-	fmt.Println("---^")
-
 	qalog.Message = getFieldDataString(qalog.Z["msg"])
 	qalog.Type = getFieldDataString(qalog.Z["type"])
 	qalog.Level = getFieldDataString(qalog.Z["level"])

@@ -1,4 +1,4 @@
-package logs
+package kafkalogs
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ func ListenToLogsQA(client *sarama.Client, topic string) {
 		err2 := qamessage.UnmarshalJSON([]byte(qalog.Z["message"].(string)))
 		Check(err2)
 
-		fmt.Println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+		fmt.Println("--------------------------------")
 		fmt.Println("Timestamp: ", qamessage.Timestamp)
 		fmt.Println("RequestId: ", qamessage.RequestId)
 		fmt.Println("Message: ", qamessage.Message)
@@ -38,7 +38,7 @@ func ListenToLogsQA(client *sarama.Client, topic string) {
 		fmt.Println("Offset: ", qamessage.Offset)
 		fmt.Println("ValueSize: ", qamessage.ValueSize)
 		fmt.Println("Duration: ", qamessage.Duration)
-		fmt.Println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+		fmt.Println("--------------------------------")
 		fmt.Println("")
 
 		msg.Processed <- true

@@ -1,8 +1,7 @@
-package logs
+package kafkalogs
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -26,9 +25,18 @@ type QAMessage struct {
 
 func (qamsg *QAMessage) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &qamsg.Z)
-	fmt.Println(qamsg.Z)
-	fmt.Println("---^")
 
+	qamsg.Message = getFieldDataString(qamsg.Z["msg"])
+	qamsg.Level = getFieldDataString(qamsg.Z["level"])
+	qamsg.Status = getFieldDataInt32(qamsg.Z["status"])
+	qamsg.Stderr = getFieldDataString(qamsg.Z["stderr"])
+	qamsg.Topic = getFieldDataString(qamsg.Z["topic"])
+	qamsg.Partition = getFieldDataInt32(qamsg.Z["partition"])
+	qamsg.Offset = getFieldDataInt32(qamsg.Z["offset"])
+	qamsg.ValueSize = getFieldDataInt32(qamsg.Z["value size"])
+	qamsg.Duration = getFieldDataFloat64(qamsg.Z["duration_ms"])
+
+	// custom fields conversion
 	if isValidField(qamsg.Z["time"], reflect.String) {
 		t1, _ := time.Parse(time.RFC3339, qamsg.Z["time"].(string))
 		qamsg.Timestamp = t1
@@ -40,12 +48,6 @@ func (qamsg *QAMessage) UnmarshalJSON(data []byte) error {
 		qamsg.RequestId = int32(rid)
 	}
 
-	qamsg.Message = getFieldDataString(qamsg.Z["msg"])
-	qamsg.Level = getFieldDataString(qamsg.Z["level"])
-	qamsg.Status = getFieldDataInt32(qamsg.Z["status"])
-	qamsg.Stderr = getFieldDataString(qamsg.Z["stderr"])
-	qamsg.Topic = getFieldDataString(qamsg.Z["topic"])
-
 	if isValidField(qamsg.Z["topics"], reflect.Slice) {
 		str := ""
 		vals := qamsg.Z["topics"].([]interface{})
@@ -54,10 +56,5 @@ func (qamsg *QAMessage) UnmarshalJSON(data []byte) error {
 		}
 		qamsg.Topic = strings.Replace(strings.Trim(str, " "), " ", ",", -1)
 	}
-
-	qamsg.Partition = getFieldDataInt32(qamsg.Z["partition"])
-	qamsg.Offset = getFieldDataInt32(qamsg.Z["offset"])
-	qamsg.ValueSize = getFieldDataInt32(qamsg.Z["value size"])
-	qamsg.Duration = getFieldDataFloat64(qamsg.Z["duration_ms"])
 	return err
 }
