@@ -1,6 +1,9 @@
 package kafkalogs
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type QALog struct {
 	Type          string `json:"type"`
@@ -25,4 +28,18 @@ func (qalog *QALog) UnmarshalJSON(data []byte) error {
 	qalog.ImageName = getFieldDataString(qalog.Z["image_name"])
 	qalog.Port = getFieldDataInt32(qalog.Z["port"])
 	return err
+}
+
+func (qalog *QALog) Debug() {
+	fmt.Println("--------------------------------")
+	fmt.Println("[QALog] => Message: ", qalog.Message)
+	fmt.Println("[QALog] => Type: ", qalog.Type)
+	fmt.Println("[QALog] => Level: ", qalog.Level)
+	fmt.Println("[QALog] => Service: ", qalog.Service)
+	fmt.Println("[QALog] => Module: ", qalog.Module)
+	fmt.Println("[QALog] => ModuleVersion: ", qalog.ModuleVersion)
+	fmt.Println("[QALog] => ImageName: ", qalog.ImageName)
+	fmt.Println("[QALog] => Port: ", qalog.Port)
+	fmt.Println("--------------------------------")
+	fmt.Println("")
 }

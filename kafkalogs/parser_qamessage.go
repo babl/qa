@@ -2,6 +2,7 @@ package kafkalogs
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -57,4 +58,21 @@ func (qamsg *QAMessage) UnmarshalJSON(data []byte) error {
 		qamsg.Topic = strings.Replace(strings.Trim(str, " "), " ", ",", -1)
 	}
 	return err
+}
+
+func (qamsg *QAMessage) Debug() {
+	fmt.Println("--------------------------------")
+	fmt.Println("[QAMessage] => Timestamp: ", qamsg.Timestamp)
+	fmt.Println("[QAMessage] => RequestId: ", qamsg.RequestId)
+	fmt.Println("[QAMessage] => Message: ", qamsg.Message)
+	fmt.Println("[QAMessage] => Level: ", qamsg.Level)
+	fmt.Println("[QAMessage] => Status: ", qamsg.Status)
+	fmt.Println("[QAMessage] => Stderr: ", qamsg.Stderr)
+	fmt.Println("[QAMessage] => Topic: ", qamsg.Topic)
+	fmt.Println("[QAMessage] => Partition: ", qamsg.Partition)
+	fmt.Println("[QAMessage] => Offset: ", qamsg.Offset)
+	fmt.Println("[QAMessage] => ValueSize: ", qamsg.ValueSize)
+	fmt.Println("[QAMessage] => Duration: ", qamsg.Duration)
+	fmt.Println("--------------------------------")
+	fmt.Println("")
 }
