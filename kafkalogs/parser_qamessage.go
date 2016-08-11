@@ -12,6 +12,7 @@ import (
 type QAMessage struct {
 	Timestamp time.Time `json:"time"`
 	RequestId int32     `json:"rid"`
+	Key       string    `json:"key"`
 	Message   string    `json:"msg"`
 	Level     string    `json:"level"`
 	Status    int32     `json:"status"`
@@ -27,6 +28,7 @@ type QAMessage struct {
 func (qamsg *QAMessage) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &qamsg.Z)
 
+	qamsg.Key = getFieldDataString(qamsg.Z["key"])
 	qamsg.Message = getFieldDataString(qamsg.Z["msg"])
 	qamsg.Level = getFieldDataString(qamsg.Z["level"])
 	qamsg.Status = getFieldDataInt32(qamsg.Z["status"])
@@ -64,6 +66,7 @@ func (qamsg *QAMessage) Debug() {
 	fmt.Println("--------------------------------")
 	fmt.Println("[QAMessage] => Timestamp: ", qamsg.Timestamp)
 	fmt.Println("[QAMessage] => RequestId: ", qamsg.RequestId)
+	fmt.Println("[QAMessage] => Key: ", qamsg.Key)
 	fmt.Println("[QAMessage] => Message: ", qamsg.Message)
 	fmt.Println("[QAMessage] => Level: ", qamsg.Level)
 	fmt.Println("[QAMessage] => Status: ", qamsg.Status)

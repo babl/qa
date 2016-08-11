@@ -23,6 +23,7 @@ var debug bool
 func main() {
 	log.SetOutput(os.Stderr)
 	log.SetFormatter(&log.JSONFormatter{})
+	log.SetLevel(log.WarnLevel)
 
 	app := configureCli()
 	app.Run(os.Args)
@@ -42,13 +43,13 @@ func run(listen, kafkaBrokers string, dbg bool) {
 
 	chQALog := make(chan *QALog)
 	chQAMsg := make(chan *QAMessage)
-	go debugLog(chQALog)
-	go debugMsg(chQAMsg)
+	//go debugLog(chQALog)
+	//go debugMsg(chQAMsg)
 	go ListenToLogsQA(s.kafkaClient, qaTopic, chQALog, chQAMsg)
 
 	// other higher level go rotines go here
-	// -> go MonitorRequestHistory(chQAMsg)
-	// -> go MonitorRequestLifeCycle(chQAMsg)
+	go MonitorRequestHistory(chQAMsg)
+	// -> go MonitorRequestLifeCycle(chQAMsg) // NOTE: Can not consume twice from the same channel !!! (chQAMsg)
 
 	// block main process
 	for {
