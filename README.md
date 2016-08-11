@@ -5,7 +5,7 @@ Initial draft: [https://docs.google.com/babl-qa](https://docs.google.com/present
 ### How to test babl-qa in the local dev-env
 In order to test `babl-qa` locally it is required to launch 4 additional services/modules:
 
-- logstash 
+- logstash
 - supervisor2
 - babl-server
 - babl (cli)
@@ -18,24 +18,24 @@ Launch 6 terminal sessions in `$GOPATH/src/github.com/larskluge/babl-qa/DEVENV` 
 
 
 	T1: $ ./run_logstash.sh && ./run_attach.sh
-	
+
 	T2: $ ./supervisor2.sh
-	
+
 	T3: $ ./babl-server.sh
-	
+
 	T4: $ ./babl-qa.sh
-	
+
 	T5: $ ./kafka-listen-logsqa.sh
-	
-	T6: $ ./babl-cli.sh 
-	
-	
+
+	T6: $ ./babl-cli.sh
+
+
 ### TODO:
 
 1. Babl module request history view
 
-	- [ ] Track request Start/Stop(Duration) from kafka `logs.qa` topic
-	
+	- [x] Track request Start/Stop(Duration) from kafka `logs.qa` topic
+
 
 2. Babl module request lifecycle view
 	- [ ] Track request full lifecycle from kafka `logs.qa` topic
@@ -46,4 +46,3 @@ Launch 6 terminal sessions in `$GOPATH/src/github.com/larskluge/babl-qa/DEVENV` 
 	- [x] Listen to kafka `logs.qa` topic and parse JSON log messages
 	- [ ] Create a request lifecycle manager (receive messages and groups by requestid, should contain the 6 different lifecycle messages to assure the request was successfuly completed)
 	- [ ] Create a REST api module (WIP)
-
