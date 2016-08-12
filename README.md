@@ -17,7 +17,7 @@ In order to test `babl-qa` locally it is required to launch 4 additional service
 Launch 6 terminal sessions in `$GOPATH/src/github.com/larskluge/babl-qa/DEVENV` and run:
 
 
-	T1: $ ./logstash_start.sh && ./run_attach.sh
+	T1: $ ./logstash_start.sh && ./logstash_attach.sh
 
 	T2: $ ./supervisor2.sh
 
