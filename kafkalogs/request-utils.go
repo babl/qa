@@ -1,9 +1,7 @@
-package main
+package kafkalogs
 
 import (
 	"strings"
-
-	. "github.com/larskluge/babl-qa/kafkalogs"
 )
 
 /*

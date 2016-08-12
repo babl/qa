@@ -46,17 +46,16 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	s.kafkaProducer = kafka.NewProducer(brokers, clientID+".producer")
 	defer (*s.kafkaProducer).Close()
 
-	chQALog := make(chan *QALog)
+	chQAMData := make(chan *QAMetadata)
 	chQAMsg := make(chan *QAMessage)
 	chQAHistory := make(chan *RequestHistory)
 
-	go ListenToLogsQA(s.kafkaClient, kafkaTopicQA, chQALog, chQAMsg)
+	go ListenToLogsQA(s.kafkaClient, kafkaTopicQA, chQAMData, chQAMsg)
 
 	// other higher level go rotines go here
-	go MonitorRequestHistory(chQAMsg, chQAHistory)
+	go MonitorRequest(chQAMsg, chQAHistory)
 	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chQAHistory)
-
-	//go MonitorRequestLifeCycle(chQAMsg) // NOTE: Can not consume twice from the same channel !!! (chQAMsg)
+	//go SaveRequestLifecycle(s.kafkaProducer, kafkaTopicHistory, chQALifecycle)
 
 	// block main process (will be replaced with HTTP server call)
 	for {

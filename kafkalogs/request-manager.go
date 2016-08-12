@@ -1,4 +1,4 @@
-package main
+package kafkalogs
 
 import (
 	"encoding/json"
@@ -8,9 +8,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	. "github.com/larskluge/babl-qa/kafkalogs"
 	"github.com/larskluge/babl-server/kafka"
-	//. "github.com/larskluge/babl-server/utils"
 )
 
 type RequestHistory struct {
@@ -33,7 +31,7 @@ RESTAPI
 “status” : SUCCESS		// [‘SUCCESS’, ‘FAIL’, ‘TIMEOUT’] #6 (status + stderr)
 },
 */
-func MonitorRequestHistory(chQAMsg chan *QAMessage, chQAHist chan *RequestHistory) {
+func MonitorRequest(chQAMsg chan *QAMessage, chQAHist chan *RequestHistory) {
 	rhList := make(map[int32]RequestHistory)
 
 	for qalog := range chQAMsg {
