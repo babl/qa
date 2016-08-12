@@ -33,7 +33,7 @@ RESTAPI
 },
 */
 func MonitorRequestHistory(chQAMsg chan *QAMessage, chQAHist chan *RequestHistory) {
-	rhList := make(map[int32]RequestHistory) // this needs to be optimized, should use a circular list
+	rhList := make(map[int32]RequestHistory)
 
 	for qalog := range chQAMsg {
 		progress := CheckMessageProgress(qalog)
@@ -60,6 +60,7 @@ func MonitorRequestHistory(chQAMsg chan *QAMessage, chQAHist chan *RequestHistor
 			data.Duration = qalog.Duration
 			rhList[qalog.RequestId] = data
 			chQAHist <- &data
+			delete(rhList, qalog.RequestId)
 		}
 	}
 }
