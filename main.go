@@ -56,7 +56,7 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	go MonitorRequestHistory(chQAMsg, chQAHistory)
 	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chQAHistory)
 
-	go MonitorRequestLifeCycle(chQAMsg) // NOTE: Can not consume twice from the same channel !!! (chQAMsg)
+	//go MonitorRequestLifeCycle(chQAMsg) // NOTE: Can not consume twice from the same channel !!! (chQAMsg)
 
 	// block main process (will be replaced with HTTP server call)
 	for {

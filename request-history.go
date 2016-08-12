@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Shopify/sarama"
 	. "github.com/larskluge/babl-qa/kafkalogs"
 	"github.com/larskluge/babl-server/kafka"
-	. "github.com/larskluge/babl-server/utils"
+	//. "github.com/larskluge/babl-server/utils"
 )
 
 type RequestHistory struct {
@@ -37,14 +38,15 @@ func MonitorRequestHistory(chQAMsg chan *QAMessage, chQAHist chan *RequestHistor
 
 	for qalog := range chQAMsg {
 		progress := CheckMessageProgress(qalog)
-		fmt.Println("MonitorRequestHistory: ", progress)
+		//fmt.Println("MonitorRequestHistory: ", progress)
+		//qalog.Debug()
 		if progress == QAMsg1 {
 			rhList[qalog.RequestId] = RequestHistory{
 				Timestamp:  qalog.Timestamp,
 				RequestId:  qalog.RequestId,
-				Supervisor: SplitGetByIndex(qalog.Key, ".", 0),
-				Module: SplitGetByIndex(qalog.Topic, ".", 1) + "." +
-					SplitGetByIndex(qalog.Topic, ".", 2),
+				Supervisor: strings.Split(qalog.Key, ".")[0],
+				Module: strings.Split(qalog.Topic, ".")[1] + "." +
+					strings.Split(qalog.Topic, ".")[2],
 				Status:   0,
 				Duration: 0.0,
 			}
@@ -53,7 +55,7 @@ func MonitorRequestHistory(chQAMsg chan *QAMessage, chQAHist chan *RequestHistor
 			data := rhList[qalog.RequestId]
 			data.Status = qalog.Status
 			rhList[qalog.RequestId] = data
-			fmt.Println(qalog.Status)
+			//fmt.Println(qalog.Status)
 		}
 		if progress == QAMsg6 {
 			data := rhList[qalog.RequestId]
