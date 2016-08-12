@@ -34,15 +34,16 @@ Launch 6 terminal sessions in `$GOPATH/src/github.com/larskluge/babl-qa/DEVENV` 
 
 1. Babl module request history view
 
-	- [x] Track request Start/Stop(Duration) from kafka `logs.qa` topic
+	- [x] Track request Start/Stop(Duration) from kafka `logs.qa` topic and write to `logs.history`
 
 
 2. Babl module request lifecycle view
-	- [ ] Track request full lifecycle from kafka `logs.qa` topic
+	- [x] Track request full lifecycle from kafka `logs.qa` topic and write to `logs.lifecycle`
 	- [ ] Send babl events (Telegram/Slack notifications) when the request lifecycle is not completed within the expected time limit.
 
 3. babl-qa core modules
 
 	- [x] Listen to kafka `logs.qa` topic and parse JSON log messages
-	- [ ] Create a request lifecycle manager (receive messages and groups by requestid, should contain the 6 different lifecycle messages to assure the request was successfuly completed)
+	- [x] Create a request lifecycle manager (receive messages and groups by requestid, should contain the 6 different lifecycle messages to assure the request was successfuly completed)
 	- [ ] Create a REST api module (WIP)
+	- [ ] Create internal request timeout monitor (in some conditions supcervisor2 does not timeout)

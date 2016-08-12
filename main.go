@@ -38,8 +38,9 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	}
 	s := server{}
 
-	kafkaTopicQA := "logs.qa"
-	kafkaTopicHistory := "logs.history"
+	const kafkaTopicQA = "logs.qa"
+	const kafkaTopicHistory = "logs.history"
+	const kafkaTopicLifecycle = "logs.lifecycle"
 	brokers := strings.Split(kafkaBrokers, ",")
 	s.kafkaClient = kafka.NewClient(brokers, kafkaTopicQA, debug)
 	defer (*s.kafkaClient).Close()
@@ -49,13 +50,14 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	chQAMData := make(chan *QAMetadata)
 	chQAMsg := make(chan *QAMessage)
 	chQAHistory := make(chan *RequestHistory)
+	chQADetails := make(chan *[]RequestDetails)
 
 	go ListenToLogsQA(s.kafkaClient, kafkaTopicQA, chQAMData, chQAMsg)
 
 	// other higher level go rotines go here
-	go MonitorRequest(chQAMsg, chQAHistory)
+	go MonitorRequest(chQAMsg, chQAHistory, chQADetails)
 	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chQAHistory)
-	//go SaveRequestLifecycle(s.kafkaProducer, kafkaTopicHistory, chQALifecycle)
+	go SaveRequestLifecycle(s.kafkaProducer, kafkaTopicLifecycle, chQADetails)
 
 	// block main process (will be replaced with HTTP server call)
 	for {
