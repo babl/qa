@@ -3,9 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/Shopify/sarama"
 	. "github.com/larskluge/babl-qa/kafkalogs"
+	"github.com/larskluge/babl-server/kafka"
 	. "github.com/larskluge/babl-server/utils"
 )
 
@@ -29,7 +32,7 @@ RESTAPI
 “status” : SUCCESS		// [‘SUCCESS’, ‘FAIL’, ‘TIMEOUT’] #6 (status + stderr)
 },
 */
-func MonitorRequestHistory(chQAMsg chan *QAMessage) {
+func MonitorRequestHistory(chQAMsg chan *QAMessage, chQAHist chan *RequestHistory) {
 	rhList := make(map[int32]RequestHistory) // this needs to be optimized, should use a circular list
 
 	for qalog := range chQAMsg {
@@ -56,9 +59,15 @@ func MonitorRequestHistory(chQAMsg chan *QAMessage) {
 			//data.Status = 1
 			data.Duration = qalog.Duration
 			rhList[qalog.RequestId] = data
-
-			rhJson, _ := json.Marshal(rhList[qalog.RequestId])
-			fmt.Printf("%s\n", rhJson)
+			chQAHist <- &data
 		}
+	}
+}
+
+func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chQAHist chan *RequestHistory) {
+	for reqhist := range chQAHist {
+		rhJson, _ := json.Marshal(reqhist)
+		fmt.Printf("%s\n", rhJson)
+		kafka.SendMessage(producer, strconv.FormatInt(int64(reqhist.RequestId), 10), topic, &rhJson)
 	}
 }

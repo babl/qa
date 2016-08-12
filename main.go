@@ -12,10 +12,12 @@ import (
 )
 
 type server struct {
-	kafkaClient *sarama.Client
+	kafkaClient   *sarama.Client
+	kafkaProducer *sarama.SyncProducer
 }
 
 const Version = "1.0.0"
+const clientID = "babl-qa"
 const ModuleExecutionWaitTimeout = 5 * time.Minute
 
 var debug bool
@@ -36,44 +38,29 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	}
 	s := server{}
 
-	qaTopic := "logs.qa"
+	kafkaTopicQA := "logs.qa"
+	kafkaTopicHistory := "logs.history"
 	brokers := strings.Split(kafkaBrokers, ",")
-	s.kafkaClient = kafka.NewClient(brokers, qaTopic, debug)
+	s.kafkaClient = kafka.NewClient(brokers, kafkaTopicQA, debug)
 	defer (*s.kafkaClient).Close()
+	s.kafkaProducer = kafka.NewProducer(brokers, clientID+".producer")
+	defer (*s.kafkaProducer).Close()
 
 	chQALog := make(chan *QALog)
 	chQAMsg := make(chan *QAMessage)
-	//go debugLog(chQALog)
-	//go debugMsg(chQAMsg)
-	go ListenToLogsQA(s.kafkaClient, qaTopic, chQALog, chQAMsg)
+	chQAHistory := make(chan *RequestHistory)
+
+	go ListenToLogsQA(s.kafkaClient, kafkaTopicQA, chQALog, chQAMsg)
 
 	// other higher level go rotines go here
-	go MonitorRequestHistory(chQAMsg)
+	go MonitorRequestHistory(chQAMsg, chQAHistory)
+	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chQAHistory)
+
 	// -> go MonitorRequestLifeCycle(chQAMsg) // NOTE: Can not consume twice from the same channel !!! (chQAMsg)
 
-	// block main process
+	// block main process (will be replaced with HTTP server call)
 	for {
-	}
-}
-
-// TOBEREMOVED
-func debugLog(chQALog chan *QALog) {
-	for {
-		qalog, ok := <-chQALog
-		if !ok {
-			panic(qalog)
-		}
-		qalog.Debug()
-	}
-}
-
-// TOBEREMOVED
-func debugMsg(chQAMsg chan *QAMessage) {
-	for {
-		qamsg, ok := <-chQAMsg
-		if !ok {
-			panic(qamsg)
-		}
-		qamsg.Debug()
+		timer1 := time.NewTimer(time.Second * 30)
+		<-timer1.C
 	}
 }
