@@ -37,6 +37,7 @@ func MonitorRequestHistory(chQAMsg chan *QAMessage, chQAHist chan *RequestHistor
 
 	for qalog := range chQAMsg {
 		progress := CheckMessageProgress(qalog)
+		fmt.Println("MonitorRequestHistory: ", progress)
 		if progress == QAMsg1 {
 			rhList[qalog.RequestId] = RequestHistory{
 				Timestamp:  qalog.Timestamp,
