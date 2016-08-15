@@ -20,7 +20,7 @@ type QAMessage struct {
 	Topic     string    `json:"topic"`
 	Partition int32     `json:"partition"`
 	Offset    int32     `json:"offset"`
-	ValueSize int32     `json:"value size"`
+	ValueSize int32     `json:"value_size"`
 	Duration  float64   `json:"duration_ms"`
 	Z         map[string]interface{}
 }
@@ -36,7 +36,7 @@ func (qamsg *QAMessage) UnmarshalJSON(data []byte) error {
 	qamsg.Topic = getFieldDataString(qamsg.Z["topic"])
 	qamsg.Partition = getFieldDataInt32(qamsg.Z["partition"])
 	qamsg.Offset = getFieldDataInt32(qamsg.Z["offset"])
-	qamsg.ValueSize = getFieldDataInt32(qamsg.Z["value size"])
+	qamsg.ValueSize = getFieldDataInt32(qamsg.Z["value_size"])
 	qamsg.Duration = getFieldDataFloat64(qamsg.Z["duration_ms"])
 
 	// custom fields conversion
@@ -62,7 +62,7 @@ func (qamsg *QAMessage) UnmarshalJSON(data []byte) error {
 	return err
 }
 
-func (qamsg *QAMessage) Debug() {
+func (qamsg *QAMessage) DebugZ() {
 	fmt.Println("--------------------------------")
 	fmt.Println("[QAMessage] => Timestamp: ", qamsg.Timestamp)
 	fmt.Println("[QAMessage] => RequestId: ", qamsg.RequestId)

@@ -7,7 +7,12 @@ import (
 	. "github.com/larskluge/babl-server/utils"
 )
 
-func ListenToLogsQA(client *sarama.Client, topic string, chQAMData chan *QAMetadata, chQAMsg chan *QAMessage) {
+type QALog struct {
+	QAMetadata
+	QAMessage
+}
+
+func ListenToLogsQA(client *sarama.Client, topic string, chQALog chan *QALog) {
 	log.Debug("Consuming from qa topic")
 	ch := make(chan *kafka.ConsumerData)
 	//go kafka.Consume(client, topic, ch, kafka.ConsumerOptions{Offset: sarama.OffsetOldest})
@@ -19,14 +24,16 @@ func ListenToLogsQA(client *sarama.Client, topic string, chQAMData chan *QAMetad
 		qamdata := QAMetadata{}
 		err1 := qamdata.UnmarshalJSON(msg.Value)
 		Check(err1)
+		//qamdata.Debug()
 
 		// parse low level log message (logstash "message" property)
 		qamsg := QAMessage{}
-		err2 := qamsg.UnmarshalJSON([]byte(qamdata.Z["message"].(string)))
+		err2 := qamsg.UnmarshalJSON([]byte(qamdata.Y["message"].(string)))
 		Check(err2)
+		//qamsg.Debug()
 
-		go func() { chQAMData <- &qamdata }()
-		go func() { chQAMsg <- &qamsg }()
+		qalog := QALog{qamdata, qamsg}
+		go func() { chQALog <- &qalog }()
 
 		msg.Processed <- true
 	}

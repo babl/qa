@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -12,16 +11,18 @@ import (
 )
 
 type RequestHistory struct {
-	Timestamp  time.Time `json:"time"`
-	RequestId  int32     `json:"rid"`
-	Supervisor string    `json:"supervisor"`
-	Module     string    `json:"module"`
-	Status     int32     `json:"status"`
-	Duration   float64   `json:"duration_ms"`
+	Timestamp     time.Time `json:"time"`
+	RequestId     int32     `json:"rid"`
+	Supervisor    string    `json:"supervisor"`
+	Module        string    `json:"module"`
+	ModuleVersion string    `json:"moduleversion"`
+	Status        int32     `json:"status"`
+	Duration      float64   `json:"duration_ms"`
 }
 
 type RequestDetails struct {
 	RequestHistory
+	Host      string `json:"host"`
 	Step      int    `json:"step"`
 	Topic     string `json:"topic"`
 	Partition int32  `json:"partition"`
@@ -31,12 +32,12 @@ type RequestDetails struct {
 /*
 RESTAPI: GET /api/request/logs
 {
-“timestamp” : ”2016-08-04T09:55:06Z”,     -> #1
-“requestid” : “123456”,                   -> #1
-“supervisor” : “babl-queue1”,             -> #1 (key)
-“module” : “larskluge/bablbot”,           -> #1
-“duration_ms” : 125.75,                   -> #6
-“status” : SUCCESS		// [‘SUCCESS’, ‘FAIL’, ‘TIMEOUT’] #6 (status + stderr)
+“timestamp” : ”2016-08-04T09:55:06Z”,
+“requestid” : “123456”,
+“supervisor” : “babl-queue1”,
+“module” : “larskluge/bablbot”,
+“duration_ms” : 125.75,
+“status” : SUCCESS		// [‘SUCCESS’, ‘FAIL’, ‘TIMEOUT’]
 }
 
 RESTAPI: GET /api/request/details/12345
@@ -64,88 +65,55 @@ RESTAPI: GET /api/request/details/12345
 {... “step” : 6}]
 */
 
-func MonitorRequest(chQAMsg chan *QAMessage,
+func MonitorRequest(chQALog chan *QALog,
 	chQAHist chan *RequestHistory, chQADetails chan *[]RequestDetails) {
 	rhList := make(map[int32]RequestHistory)
 	rdList := make(map[int32][]RequestDetails)
 
-	for qamsg := range chQAMsg {
-		progress := CheckMessageProgress(qamsg)
+	for qalog := range chQALog {
+		progress := CheckMessageProgress(qalog)
 		//fmt.Println("MonitorRequestHistory: ", progress)
-		//qamsg.Debug()
+		//qalog.DebugY()
+		//qalog.DebugZ()
 
-		/*
-		   {
-		   “timestamp” : ”2016-08-04T09:55:06Z”,     -> #1
-		   “requestid” : “123456”,                   -> #1
-		   “supervisor” : “babl-queue1”,             -> #1 (key)
-		   “module” : “larskluge/bablbot”,           -> #1
-		   “duration_ms” : 125.75,                   -> #6
-		   “status” : SUCCESS		// [‘SUCCESS’, ‘FAIL’, ‘TIMEOUT’] #6 (status + stderr)
-		   }
-		*/
-		if progress == QAMsg1 {
-			// TODO: optimize
-			data := RequestHistory{}
-			data.Timestamp = qamsg.Timestamp
-			data.RequestId = qamsg.RequestId
-			data.Supervisor = strings.Split(qamsg.Key, ".")[0]
-			data.Module = strings.Split(qamsg.Topic, ".")[1] + "." + strings.Split(qamsg.Topic, ".")[2]
-			data.Status = qamsg.Status
-			data.Duration = qamsg.Duration
-			rhList[qamsg.RequestId] = data
-
-			rdList[qamsg.RequestId] = append(rdList[qamsg.RequestId],
-				RequestDetails{
-					RequestHistory: rhList[qamsg.RequestId],
-					Step:           progress,
-					Topic:          qamsg.Topic,
-					Partition:      qamsg.Partition,
-					Offset:         qamsg.Offset,
-				})
+		data := rhList[qalog.RequestId]
+		data.Timestamp = qalog.Timestamp
+		data.RequestId = qalog.RequestId
+		if qalog.Service == "supervisor2" && data.Supervisor == "" {
+			data.Supervisor = qalog.Host
 		}
-		if progress == QAMsg2 || progress == QAMsg3 || progress == QAMsg4 || progress == QAMsg5 {
-			// TODO: optimize
-			data := RequestHistory{}
-			data = rhList[qamsg.RequestId]
-			data.RequestId = qamsg.RequestId
-			data.Timestamp = qamsg.Timestamp
-			data.Status = qamsg.Status
-			data.Duration = qamsg.Duration
-			rhList[qamsg.RequestId] = data
-
-			rdList[qamsg.RequestId] = append(rdList[qamsg.RequestId],
-				RequestDetails{
-					RequestHistory: rhList[qamsg.RequestId],
-					Step:           progress,
-					Topic:          qamsg.Topic,
-					Partition:      qamsg.Partition,
-					Offset:         qamsg.Offset,
-				})
+		if qalog.Module != "" && data.Module == "" {
+			data.Module = qalog.Module
 		}
+		if qalog.ModuleVersion != "" && data.ModuleVersion == "" {
+			data.ModuleVersion = qalog.ModuleVersion
+		}
+		if qalog.Status != 0 {
+			data.Status = qalog.Status
+		}
+		//data.Duration = qalog.Duration
+		rhList[qalog.RequestId] = data
+
+		rdList[qalog.RequestId] = append(rdList[qalog.RequestId],
+			RequestDetails{
+				RequestHistory: rhList[qalog.RequestId],
+				Host:           qalog.Host,
+				Step:           progress,
+				Topic:          qalog.Topic,
+				Partition:      qalog.Partition,
+				Offset:         qalog.Offset,
+			})
+
 		if progress == QAMsg6 {
-			// TODO: optimize
-			data := rhList[qamsg.RequestId]
-			data.RequestId = qamsg.RequestId
-			data.Timestamp = qamsg.Timestamp
-			data.Status = qamsg.Status
-			data.Duration = qamsg.Duration
-			rhList[qamsg.RequestId] = data
+			data := rhList[qalog.RequestId]
+			data.Duration = qalog.Duration // final duration_ms from supervisor2
 			chQAHist <- &data
 
-			rdList[qamsg.RequestId] = append(rdList[qamsg.RequestId],
-				RequestDetails{
-					RequestHistory: rhList[qamsg.RequestId],
-					Step:           progress,
-					Topic:          qamsg.Topic,
-					Partition:      qamsg.Partition,
-					Offset:         qamsg.Offset,
-				})
-			datadetails := rdList[qamsg.RequestId]
+			datadetails := rdList[qalog.RequestId]
 			chQADetails <- &datadetails
 
-			delete(rhList, qamsg.RequestId)
-			delete(rdList, qamsg.RequestId)
+			delete(rhList, qalog.RequestId)
+			delete(rdList, qalog.RequestId)
 		}
 	}
 }

@@ -129,19 +129,19 @@ const (
 	QAMsg6
 )
 
-func CheckMessageProgress(qamsg *QAMessage) int {
+func CheckMessageProgress(qalog *QALog) int {
 	result := int(0)
-	if strings.Contains(qamsg.Message, msg1) && !strings.Contains(qamsg.Topic, supervisor) {
+	if strings.Contains(qalog.Message, msg1) && !strings.Contains(qalog.Topic, supervisor) {
 		result = QAMsg1
-	} else if strings.Contains(qamsg.Message, msg2) {
+	} else if strings.Contains(qalog.Message, msg2) {
 		result = QAMsg2
-	} else if strings.Contains(qamsg.Message, msg3) {
+	} else if strings.Contains(qalog.Message, msg3) {
 		result = QAMsg3
-	} else if strings.Contains(qamsg.Message, msg4) && strings.Contains(qamsg.Topic, supervisor) {
+	} else if strings.Contains(qalog.Message, msg4) && strings.Contains(qalog.Topic, supervisor) {
 		result = QAMsg4
-	} else if strings.Contains(qamsg.Message, msg5) {
+	} else if strings.Contains(qalog.Message, msg5) {
 		result = QAMsg5
-	} else if strings.Contains(qamsg.Message, msg6) {
+	} else if strings.Contains(qalog.Message, msg6) {
 		result = QAMsg6
 	}
 	return result

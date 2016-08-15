@@ -47,15 +47,14 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	s.kafkaProducer = kafka.NewProducer(brokers, clientID+".producer")
 	defer (*s.kafkaProducer).Close()
 
-	chQAMData := make(chan *QAMetadata)
-	chQAMsg := make(chan *QAMessage)
+	chQALog := make(chan *QALog)
 	chQAHistory := make(chan *RequestHistory)
 	chQADetails := make(chan *[]RequestDetails)
 
-	go ListenToLogsQA(s.kafkaClient, kafkaTopicQA, chQAMData, chQAMsg)
+	go ListenToLogsQA(s.kafkaClient, kafkaTopicQA, chQALog)
 
 	// other higher level go rotines go here
-	go MonitorRequest(chQAMsg, chQAHistory, chQADetails)
+	go MonitorRequest(chQALog, chQAHistory, chQADetails)
 	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chQAHistory)
 	go SaveRequestLifecycle(s.kafkaProducer, kafkaTopicLifecycle, chQADetails)
 
