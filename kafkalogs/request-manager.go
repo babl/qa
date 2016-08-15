@@ -74,6 +74,16 @@ func MonitorRequest(chQAMsg chan *QAMessage,
 		//fmt.Println("MonitorRequestHistory: ", progress)
 		//qamsg.Debug()
 
+		/*
+		   {
+		   “timestamp” : ”2016-08-04T09:55:06Z”,     -> #1
+		   “requestid” : “123456”,                   -> #1
+		   “supervisor” : “babl-queue1”,             -> #1 (key)
+		   “module” : “larskluge/bablbot”,           -> #1
+		   “duration_ms” : 125.75,                   -> #6
+		   “status” : SUCCESS		// [‘SUCCESS’, ‘FAIL’, ‘TIMEOUT’] #6 (status + stderr)
+		   }
+		*/
 		if progress == QAMsg1 {
 			// TODO: optimize
 			data := RequestHistory{}
@@ -94,64 +104,11 @@ func MonitorRequest(chQAMsg chan *QAMessage,
 					Offset:         qamsg.Offset,
 				})
 		}
-		if progress == QAMsg2 {
+		if progress == QAMsg2 || progress == QAMsg3 || progress == QAMsg4 || progress == QAMsg5 {
 			// TODO: optimize
 			data := RequestHistory{}
 			data = rhList[qamsg.RequestId]
-			data.Timestamp = qamsg.Timestamp
-			data.Status = qamsg.Status
-			data.Duration = qamsg.Duration
-			rhList[qamsg.RequestId] = data
-
-			rdList[qamsg.RequestId] = append(rdList[qamsg.RequestId],
-				RequestDetails{
-					RequestHistory: rhList[qamsg.RequestId],
-					Step:           progress,
-					Topic:          qamsg.Topic,
-					Partition:      qamsg.Partition,
-					Offset:         qamsg.Offset,
-				})
-		}
-		if progress == QAMsg3 {
-			// TODO: optimize
-			data := RequestHistory{}
-			data = rhList[qamsg.RequestId]
-			data.Timestamp = qamsg.Timestamp
-			data.Status = qamsg.Status
-			data.Duration = qamsg.Duration
-			rhList[qamsg.RequestId] = data
-
-			rdList[qamsg.RequestId] = append(rdList[qamsg.RequestId],
-				RequestDetails{
-					RequestHistory: rhList[qamsg.RequestId],
-					Step:           progress,
-					Topic:          qamsg.Topic,
-					Partition:      qamsg.Partition,
-					Offset:         qamsg.Offset,
-				})
-		}
-		if progress == QAMsg4 {
-			// TODO: optimize
-			data := RequestHistory{}
-			data = rhList[qamsg.RequestId]
-			data.Timestamp = qamsg.Timestamp
-			data.Status = qamsg.Status
-			data.Duration = qamsg.Duration
-			rhList[qamsg.RequestId] = data
-
-			rdList[qamsg.RequestId] = append(rdList[qamsg.RequestId],
-				RequestDetails{
-					RequestHistory: rhList[qamsg.RequestId],
-					Step:           progress,
-					Topic:          qamsg.Topic,
-					Partition:      qamsg.Partition,
-					Offset:         qamsg.Offset,
-				})
-		}
-		if progress == QAMsg5 {
-			// TODO: optimize
-			data := RequestHistory{}
-			data = rhList[qamsg.RequestId]
+			data.RequestId = qamsg.RequestId
 			data.Timestamp = qamsg.Timestamp
 			data.Status = qamsg.Status
 			data.Duration = qamsg.Duration
@@ -168,8 +125,8 @@ func MonitorRequest(chQAMsg chan *QAMessage,
 		}
 		if progress == QAMsg6 {
 			// TODO: optimize
-			data := RequestHistory{}
-			data = rhList[qamsg.RequestId]
+			data := rhList[qamsg.RequestId]
+			data.RequestId = qamsg.RequestId
 			data.Timestamp = qamsg.Timestamp
 			data.Status = qamsg.Status
 			data.Duration = qamsg.Duration

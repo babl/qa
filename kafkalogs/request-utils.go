@@ -103,12 +103,12 @@ import (
 */
 
 /*
-#1:   "msg": "Producer: message sent", Topic:  babl.larskluge.StringUpcase.IO
-#2:   "msg": "New Group Message Received"
-#3:   "msg": "call"
-#4:   "msg": "Producer: message sent", Topic:  supervisor.SevenMBP
-#5:   "msg": "New Message Received"
-#6:   "msg": "Module responded"
+#1 [supervisor2]	=>	"msg": "Producer: message sent", Topic:  babl.larskluge.StringUpcase.IO
+#2 [babl-server]	=>	"msg": "New Group Message Received"
+#3 [babl-server]	=>	"msg": "call"
+#4 [babl-server]	=>	"msg": "Producer: message sent", Topic:  supervisor.SevenMBP
+#5 [supervisor2]	=>	"msg": "New Message Received"
+#6 [supervisor2]	=>	"msg": "Module responded"
 */
 const (
 	supervisor = "supervisor"
