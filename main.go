@@ -7,6 +7,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
+	. "github.com/larskluge/babl-qa/http"
 	. "github.com/larskluge/babl-qa/kafkalogs"
 	"github.com/larskluge/babl-server/kafka"
 )
@@ -59,8 +60,10 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	go SaveRequestLifecycle(s.kafkaProducer, kafkaTopicLifecycle, chQADetails)
 
 	// block main process (will be replaced with HTTP server call)
-	for {
-		timer1 := time.NewTimer(time.Second * 30)
-		<-timer1.C
-	}
+	// for {
+	// 	timer1 := time.NewTimer(time.Second * 30)
+	// 	<-timer1.C
+	// }
+
+	StartHttpServer(listen)
 }
