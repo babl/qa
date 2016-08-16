@@ -3,11 +3,14 @@ package kafkalogs
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/Shopify/sarama"
+	log "github.com/Sirupsen/logrus"
 	"github.com/larskluge/babl-server/kafka"
+	. "github.com/larskluge/babl-server/utils"
 )
 
 type RequestHistory struct {
@@ -27,6 +30,36 @@ type RequestDetails struct {
 	Topic     string `json:"topic"`
 	Partition int32  `json:"partition"`
 	Offset    int32  `json:"offset"`
+}
+
+func (reqhist *RequestHistory) UnmarshalJSON(data []byte) error {
+	Z := make(map[string]interface{})
+	err := json.Unmarshal(data, &Z)
+
+	if isValidField(Z["time"], reflect.String) {
+		t1, _ := time.Parse(time.RFC3339, Z["time"].(string))
+		reqhist.Timestamp = t1
+	}
+	reqhist.RequestId = getFieldDataInt32(Z["rid"])
+	reqhist.Supervisor = getFieldDataString(Z["supervisor"])
+	reqhist.Module = getFieldDataString(Z["module"])
+	reqhist.ModuleVersion = getFieldDataString(Z["moduleversion"])
+	reqhist.Status = getFieldDataInt32(Z["status"])
+	reqhist.Duration = getFieldDataFloat64(Z["duration_ms"])
+	return err
+}
+
+func (reqhist *RequestHistory) Debug() {
+	fmt.Println("--------------------------------")
+	fmt.Println("[RequestHistory] => Timestamp: ", reqhist.Timestamp)
+	fmt.Println("[RequestHistory] => RequestId: ", reqhist.RequestId)
+	fmt.Println("[RequestHistory] => Supervisor: ", reqhist.Supervisor)
+	fmt.Println("[RequestHistory] => Module: ", reqhist.Module)
+	fmt.Println("[RequestHistory] => ModuleVersion: ", reqhist.ModuleVersion)
+	fmt.Println("[RequestHistory] => Status: ", reqhist.Status)
+	fmt.Println("[RequestHistory] => Duration: ", reqhist.Duration)
+	fmt.Println("--------------------------------")
+	fmt.Println("")
 }
 
 /*
@@ -126,11 +159,33 @@ func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chQAHist ch
 	}
 }
 
+func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte {
+	log.Debug("Consuming from topic: ", topic)
+	rhList := []RequestHistory{}
+	ch := make(chan *kafka.ConsumerData)
+	go kafka.ConsumeLastN(client, topic, 0, lastn, ch)
+	for msg := range ch {
+		log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request History message")
+
+		reqhist := RequestHistory{}
+		err1 := reqhist.UnmarshalJSON(msg.Value)
+		//reqhist.Debug()
+		Check(err1)
+		rhList = append(rhList, reqhist)
+
+		msg.Processed <- true
+
+	}
+	rhJson, _ := json.Marshal(rhList)
+	//fmt.Printf("%s\n", rhJson)
+	return rhJson
+}
+
 func SaveRequestLifecycle(producer *sarama.SyncProducer, topic string, chQADetails chan *[]RequestDetails) {
 	for reqdetails := range chQADetails {
 		rhJson, _ := json.Marshal(reqdetails)
 		rid := 123456 //reqdetails[0].RequestId // TODO: Needs to fix this!!!
 		fmt.Printf("%s\n", rhJson)
-		kafka.SendMessage(producer, strconv.FormatInt(int64(rid), 10), topic, &rhJson)
+		kafka.SendMessage(producer, strconv.FormatInt(int64(rid), 32), topic, &rhJson)
 	}
 }

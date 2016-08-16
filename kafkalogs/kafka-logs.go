@@ -13,7 +13,7 @@ type QALog struct {
 }
 
 func ListenToLogsQA(client *sarama.Client, topic string, chQALog chan *QALog) {
-	log.Debug("Consuming from qa topic")
+	log.Debug("Consuming from topic: ", topic)
 	ch := make(chan *kafka.ConsumerData)
 	//go kafka.Consume(client, topic, ch, kafka.ConsumerOptions{Offset: sarama.OffsetOldest})
 	go kafka.Consume(client, topic, ch)

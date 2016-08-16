@@ -1,12 +1,15 @@
 package main
 
 import (
+	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
+	"github.com/gorilla/mux"
 	. "github.com/larskluge/babl-qa/httpserver"
 	. "github.com/larskluge/babl-qa/kafkalogs"
 	"github.com/larskluge/babl-server/kafka"
@@ -59,11 +62,29 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chQAHistory)
 	go SaveRequestLifecycle(s.kafkaProducer, kafkaTopicLifecycle, chQADetails)
 
-	// block main process (will be replaced with HTTP server call)
-	// for {
-	// 	timer1 := time.NewTimer(time.Second * 30)
-	// 	<-timer1.C
-	// }
-
-	StartHttpServer(listen)
+	// http callback function handler for Request History
+	// $ http 127.0.0.1:8080/api/request/history
+	// $ http 127.0.0.1:8080/api/request/history?blocksize=20
+	HandlerRequestHistory := func(w http.ResponseWriter, r *http.Request) {
+		lastn := int64(10)
+		vars := mux.Vars(r)
+		blocksize := vars["blocksize"]
+		if blocksize != "" {
+			bsize, errParse := strconv.ParseInt(blocksize, 10, 64)
+			if errParse == nil {
+				lastn = bsize
+			}
+		}
+		rhJson := ReadRequestHistory(s.kafkaClient, kafkaTopicHistory, lastn)
+		//fmt.Printf("%s\n", rhJson)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(rhJson)
+	}
+	// http callback function handler for Request Details
+	// http 127.0.0.1:8080/api/request/details/12345
+	HandlerRequestDetails := func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		w.Write([]byte("Request Details! RequestId=" + vars["requestid"] + "\n"))
+	}
+	StartHttpServer(listen, HandlerRequestHistory, HandlerRequestDetails)
 }
