@@ -7,7 +7,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
-	. "github.com/larskluge/babl-qa/http"
+	. "github.com/larskluge/babl-qa/httpserver"
 	. "github.com/larskluge/babl-qa/kafkalogs"
 	"github.com/larskluge/babl-server/kafka"
 )

@@ -29,9 +29,8 @@ func StartHttpServer(listen string) {
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(dir))))
 
 	srv := &http.Server{
-		Handler: r,
-		Addr:    listen,
-		// Good practice: enforce timeouts for servers you create!
+		Handler:      r,
+		Addr:         listen,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
