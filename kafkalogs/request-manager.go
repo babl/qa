@@ -173,9 +173,9 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 
 func SaveRequestLifecycle(producer *sarama.SyncProducer, topic string, chQADetails chan *[]RequestDetails) {
 	for reqdetails := range chQADetails {
+		rid := (*reqdetails)[0].RequestId
 		rhJson, _ := json.Marshal(reqdetails)
-		rid := 123456 //reqdetails[0].RequestId // TODO: Needs to fix this!!!
 		fmt.Printf("%s\n", rhJson)
-		kafka.SendMessage(producer, strconv.FormatInt(int64(rid), 32), topic, &rhJson)
+		kafka.SendMessage(producer, strconv.FormatInt(int64(rid), 10), topic, &rhJson)
 	}
 }
