@@ -50,16 +50,8 @@ func (reqhist *RequestHistory) UnmarshalJSON(data []byte) error {
 }
 
 func (reqhist *RequestHistory) Debug() {
-	fmt.Println("--------------------------------")
-	fmt.Println("[RequestHistory] => Timestamp: ", reqhist.Timestamp)
-	fmt.Println("[RequestHistory] => RequestId: ", reqhist.RequestId)
-	fmt.Println("[RequestHistory] => Supervisor: ", reqhist.Supervisor)
-	fmt.Println("[RequestHistory] => Module: ", reqhist.Module)
-	fmt.Println("[RequestHistory] => ModuleVersion: ", reqhist.ModuleVersion)
-	fmt.Println("[RequestHistory] => Status: ", reqhist.Status)
-	fmt.Println("[RequestHistory] => Duration: ", reqhist.Duration)
-	fmt.Println("--------------------------------")
-	fmt.Println("")
+	rhJson, _ := json.Marshal(reqhist)
+	fmt.Printf("%s\n", rhJson)
 }
 
 /*
@@ -154,7 +146,6 @@ func MonitorRequest(chQALog chan *QALog,
 func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chQAHist chan *RequestHistory) {
 	for reqhist := range chQAHist {
 		rhJson, _ := json.Marshal(reqhist)
-		fmt.Printf("%s\n", rhJson)
 		kafka.SendMessage(producer, strconv.FormatInt(int64(reqhist.RequestId), 10), topic, &rhJson)
 	}
 }
@@ -177,7 +168,6 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 
 	}
 	rhJson, _ := json.Marshal(rhList)
-	//fmt.Printf("%s\n", rhJson)
 	return rhJson
 }
 

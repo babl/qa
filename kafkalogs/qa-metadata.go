@@ -27,13 +27,6 @@ func (qamdata *QAMetadata) UnmarshalJSON(data []byte) error {
 }
 
 func (qamdata *QAMetadata) DebugY() {
-	fmt.Println("--------------------------------")
-	fmt.Println("[QAMetadata] => Type: ", qamdata.Type)
-	fmt.Println("[QAMetadata] => Host: ", qamdata.Host)
-	fmt.Println("[QAMetadata] => Service: ", qamdata.Service)
-	fmt.Println("[QAMetadata] => Module: ", qamdata.Module)
-	fmt.Println("[QAMetadata] => ModuleVersion: ", qamdata.ModuleVersion)
-	fmt.Println("[QAMetadata] => ImageName: ", qamdata.ImageName)
-	fmt.Println("--------------------------------")
-	fmt.Println("")
+	rhJson, _ := json.Marshal(qamdata)
+	fmt.Printf("%s\n", rhJson)
 }

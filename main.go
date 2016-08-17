@@ -76,7 +76,6 @@ func run(listen, kafkaBrokers string, dbg bool) {
 			}
 		}
 		rhJson := ReadRequestHistory(s.kafkaClient, kafkaTopicHistory, lastn)
-		//fmt.Printf("%s\n", rhJson)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(rhJson)
 	}

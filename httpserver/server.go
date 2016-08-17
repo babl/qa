@@ -11,7 +11,7 @@ import (
 func StartHttpServer(listen string,
 	HandlerRequestHistory func(w http.ResponseWriter, r *http.Request),
 	HandlerRequestDetails func(w http.ResponseWriter, r *http.Request)) {
-	const dir = "./http/static"
+	const dir = "./httpserver/static"
 	r := mux.NewRouter()
 
 	// REST API

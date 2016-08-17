@@ -63,19 +63,6 @@ func (qamsg *QAMessage) UnmarshalJSON(data []byte) error {
 }
 
 func (qamsg *QAMessage) DebugZ() {
-	fmt.Println("--------------------------------")
-	fmt.Println("[QAMessage] => Timestamp: ", qamsg.Timestamp)
-	fmt.Println("[QAMessage] => RequestId: ", qamsg.RequestId)
-	fmt.Println("[QAMessage] => Key: ", qamsg.Key)
-	fmt.Println("[QAMessage] => Message: ", qamsg.Message)
-	fmt.Println("[QAMessage] => Level: ", qamsg.Level)
-	fmt.Println("[QAMessage] => Status: ", qamsg.Status)
-	fmt.Println("[QAMessage] => Stderr: ", qamsg.Stderr)
-	fmt.Println("[QAMessage] => Topic: ", qamsg.Topic)
-	fmt.Println("[QAMessage] => Partition: ", qamsg.Partition)
-	fmt.Println("[QAMessage] => Offset: ", qamsg.Offset)
-	fmt.Println("[QAMessage] => ValueSize: ", qamsg.ValueSize)
-	fmt.Println("[QAMessage] => Duration: ", qamsg.Duration)
-	fmt.Println("--------------------------------")
-	fmt.Println("")
+	rhJson, _ := json.Marshal(qamsg)
+	fmt.Printf("%s\n", rhJson)
 }
