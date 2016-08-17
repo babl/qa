@@ -46,4 +46,5 @@ Launch 6 terminal sessions in `$GOPATH/src/github.com/larskluge/babl-qa/DEVENV` 
 	- [x] Listen to kafka `logs.qa` topic and parse JSON log messages
 	- [x] Create a request lifecycle manager (receive messages and groups by requestid, should contain the 6 different lifecycle messages to assure the request was successfuly completed)
 	- [ ] Create a REST api module (WIP)
-	- [ ] Create internal request timeout monitor (in some conditions supcervisor2 does not timeout)
+	- [ ] Create internal request timeout monitor (in some conditions supervisor2 does not 	timeout)
+	- [ ] Create an internal request monitor that triggers an event error when it's only receiving messages from the supervisor2 or only from babl-server
