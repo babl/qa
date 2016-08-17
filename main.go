@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -66,15 +65,7 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	// $ http 127.0.0.1:8080/api/request/history
 	// $ http 127.0.0.1:8080/api/request/history?blocksize=20
 	HandlerRequestHistory := func(w http.ResponseWriter, r *http.Request) {
-		lastn := int64(10)
-		vars := mux.Vars(r)
-		blocksize := vars["blocksize"]
-		if blocksize != "" {
-			bsize, errParse := strconv.ParseInt(blocksize, 10, 64)
-			if errParse == nil {
-				lastn = bsize
-			}
-		}
+		lastn := GetVarsBlockSize(r, 10)
 		rhJson := ReadRequestHistory(s.kafkaClient, kafkaTopicHistory, lastn)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(rhJson)

@@ -1,12 +1,26 @@
-package http
+package httpserver
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 )
+
+func GetVarsBlockSize(r *http.Request, defaultvalue int64) int64 {
+	result := defaultvalue
+	vars := mux.Vars(r)
+	blocksize := vars["blocksize"]
+	if blocksize != "" {
+		bsize, errParse := strconv.ParseInt(blocksize, 10, 64)
+		if errParse == nil {
+			result = bsize
+		}
+	}
+	return result
+}
 
 func StartHttpServer(listen string,
 	HandlerRequestHistory func(w http.ResponseWriter, r *http.Request),
