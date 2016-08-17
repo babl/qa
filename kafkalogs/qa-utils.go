@@ -28,6 +28,10 @@ func getFieldDataString(x interface{}) string {
 	return getFieldData(x, reflect.String).(string)
 }
 
+func getFieldDataInt(x interface{}) int {
+	return int(getFieldData(x, reflect.Float64).(float64))
+}
+
 func getFieldDataInt32(x interface{}) int32 {
 	return int32(getFieldData(x, reflect.Float64).(float64))
 }

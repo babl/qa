@@ -74,7 +74,10 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	// http 127.0.0.1:8080/api/request/details/12345
 	HandlerRequestDetails := func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		w.Write([]byte("Request Details! RequestId=" + vars["requestid"] + "\n"))
+		//lastn := GetVarsBlockSize(r, 10)
+		rhJson := ReadRequestDetails(s.kafkaClient, kafkaTopicLifecycle, vars["requestid"])
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(rhJson)
 	}
 	StartHttpServer(listen, HandlerRequestHistory, HandlerRequestDetails)
 }

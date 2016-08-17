@@ -54,6 +54,33 @@ func (reqhist *RequestHistory) Debug() {
 	fmt.Printf("%s\n", rhJson)
 }
 
+func (reqdet *RequestDetails) ManualUnmarshalJSON(Z map[string]interface{}) error {
+
+	if isValidField(Z["time"], reflect.String) {
+		t1, _ := time.Parse(time.RFC3339, Z["time"].(string))
+		reqdet.Timestamp = t1
+	}
+	reqdet.RequestId = getFieldDataInt32(Z["rid"])
+	reqdet.Supervisor = getFieldDataString(Z["supervisor"])
+	reqdet.Module = getFieldDataString(Z["module"])
+	reqdet.ModuleVersion = getFieldDataString(Z["moduleversion"])
+	reqdet.Status = getFieldDataInt32(Z["status"])
+	reqdet.Duration = getFieldDataFloat64(Z["duration_ms"])
+
+	reqdet.Host = getFieldDataString(Z["host"])
+	reqdet.Step = getFieldDataInt(Z["step"])
+	reqdet.Topic = getFieldDataString(Z["topic"])
+	reqdet.Partition = getFieldDataInt32(Z["partition"])
+	reqdet.Offset = getFieldDataInt32(Z["offset"])
+
+	return nil
+}
+
+func (reqdet *RequestDetails) Debug() {
+	rhJson, _ := json.Marshal(reqdet)
+	fmt.Printf("%s\n", rhJson)
+}
+
 /*
 RESTAPI: GET /api/request/logs
 {
@@ -163,9 +190,7 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 		//reqhist.Debug()
 		Check(err1)
 		rhList = append(rhList, reqhist)
-
 		msg.Processed <- true
-
 	}
 	rhJson, _ := json.Marshal(rhList)
 	return rhJson
@@ -178,4 +203,33 @@ func SaveRequestLifecycle(producer *sarama.SyncProducer, topic string, chQADetai
 		fmt.Printf("%s\n", rhJson)
 		kafka.SendMessage(producer, strconv.FormatInt(int64(rid), 10), topic, &rhJson)
 	}
+}
+
+func ReadRequestDetails(client *sarama.Client, topic string, requestid string) []byte {
+	log.Debug("Consuming from topic: ", topic)
+	lastn := int64(100)
+	rdList := []RequestDetails{}
+	ch := make(chan *kafka.ConsumerData)
+	go kafka.ConsumeLastN(client, topic, 0, lastn, ch) // need to replace with a full scan (stop after all steps)
+
+	for msg := range ch {
+		log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request History message")
+
+		var arraymap []map[string]interface{}
+		err := json.Unmarshal(msg.Value, &arraymap)
+		Check(err)
+
+		for _, v := range arraymap {
+			rid, _ := strconv.ParseInt(requestid, 10, 32)
+			if getFieldDataInt32(v["rid"]) == int32(rid) {
+				reqdet := RequestDetails{}
+				reqdet.ManualUnmarshalJSON(v)
+				//reqdet.Debug()
+				rdList = append(rdList, reqdet)
+			}
+		}
+		msg.Processed <- true
+	}
+	rhJson, _ := json.Marshal(rdList)
+	return rhJson
 }
