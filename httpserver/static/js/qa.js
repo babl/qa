@@ -4,15 +4,15 @@ function updateRequestHistory() {
   $.getJSON( urlRequestHistory, {
     format: "json"
   })
-  .done(function( data ) {
+  .done(function(data) {
+    var data_reverse = data.slice(0).reverse();
     $(".bodycontent").remove()
-    $.each( data, function( i, item ) {
-      console.log(item)
+    $.each(data_reverse, function(i, item) {
       $("#tableData").append(
-        "<tbody class=\"bodycontent\">"+
+        "<tbody id=\""+item.rid+"\" class=\"bodycontent\">"+
           "<tr class=\"trcontent\">"+
             "<th class=\"text-center\">"+
-              "<a href=\"#\"><span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\" onclick=\"getRequestDetails("+item.rid+")\"></span></a>"+
+              "<a href=\"javascript:void(0)\"><span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\" onclick=\"getRequestDetails("+item.rid+")\"></span></a>"+
             "</th>"+
             "<td>"+item.time+"</td>"+
             "<td>"+item.rid+"</td>"+
@@ -28,5 +28,28 @@ function updateRequestHistory() {
 }
 
 function getRequestDetails(rid) {
-  alert("details: "+rid)
+  var urlRequestDetails = "/api/request/details/"+rid;
+  $.getJSON(urlRequestDetails, {
+    format: "json"
+  })
+  .done(function(data) {
+    // if (data.length == 0) {
+    //   alert("No details data found!")
+    //   return
+    // }
+    var details
+    $.each(data, function(i, item) {
+      console.log(item)
+      details += ''
+    });
+
+
+    $("#"+rid).append(
+      "    <tr class=\"trcontent\">"+
+      "        <th class=\"text-center\">"+
+      "            <span class=\"glyphicon glyphicon-info-sign\" aria-hidden=\"true\"></span>"+
+      "        </th>"+
+      "        <td colspan=\"7\"></td>"+
+      "    </tr>")
+  });
 }
