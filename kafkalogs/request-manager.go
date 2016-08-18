@@ -108,7 +108,7 @@ func MonitorRequest(chQALog chan *QALog,
 func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chQAHist chan *RequestHistory) {
 	for reqhist := range chQAHist {
 		rhJson, _ := json.Marshal(reqhist)
-		//fmt.Printf("%s\n", rhJson)
+		fmt.Printf("%s\n", rhJson)
 		kafka.SendMessage(producer, strconv.FormatInt(int64(reqhist.RequestId), 10), topic, &rhJson)
 	}
 }
