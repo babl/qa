@@ -131,6 +131,7 @@ func MonitorRequest(chQALog chan *QALog,
 		data := rhList[qalog.RequestId]
 		data.Timestamp = qalog.Timestamp
 		data.RequestId = qalog.RequestId
+		data.Duration = qalog.Duration
 		if qalog.Service == "supervisor2" && data.Supervisor == "" {
 			data.Supervisor = qalog.Host
 		}
@@ -196,7 +197,7 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 	return rhJson
 }
 
-func SaveRequestLifecycle(producer *sarama.SyncProducer, topic string, chQADetails chan *[]RequestDetails) {
+func SaveRequestDetails(producer *sarama.SyncProducer, topic string, chQADetails chan *[]RequestDetails) {
 	for reqdetails := range chQADetails {
 		rid := (*reqdetails)[0].RequestId
 		rhJson, _ := json.Marshal(reqdetails)

@@ -43,7 +43,7 @@ func run(listen, kafkaBrokers string, dbg bool) {
 
 	const kafkaTopicQA = "logs.qa"
 	const kafkaTopicHistory = "logs.history"
-	const kafkaTopicLifecycle = "logs.lifecycle"
+	const kafkaTopicDetails = "logs.details"
 	brokers := strings.Split(kafkaBrokers, ",")
 	s.kafkaClient = kafka.NewClient(brokers, kafkaTopicQA, debug)
 	defer (*s.kafkaClient).Close()
@@ -59,7 +59,7 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	// other higher level go rotines go here
 	go MonitorRequest(chQALog, chQAHistory, chQADetails)
 	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chQAHistory)
-	go SaveRequestLifecycle(s.kafkaProducer, kafkaTopicLifecycle, chQADetails)
+	go SaveRequestDetails(s.kafkaProducer, kafkaTopicDetails, chQADetails)
 
 	// http callback function handler for Request History
 	// $ http 127.0.0.1:8080/api/request/history
@@ -75,7 +75,7 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	HandlerRequestDetails := func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		//lastn := GetVarsBlockSize(r, 10)
-		rhJson := ReadRequestDetails(s.kafkaClient, kafkaTopicLifecycle, vars["requestid"])
+		rhJson := ReadRequestDetails(s.kafkaClient, kafkaTopicDetails, vars["requestid"])
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(rhJson)
 	}
