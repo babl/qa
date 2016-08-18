@@ -3,6 +3,7 @@ package kafkalogs
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/Shopify/sarama"
@@ -58,6 +59,21 @@ func updateRequestDetails(progress int, qalog *QALog) RequestDetails {
 	return data
 }
 
+func orderbystepRequestDetails(rdOrigin []RequestDetails) []RequestDetails {
+	rdAuxList := make(map[int]RequestDetails)
+	var rdResult []RequestDetails
+	var keys []int
+	for _, reqdet := range rdOrigin {
+		keys = append(keys, reqdet.Step)
+		rdAuxList[reqdet.Step] = reqdet
+	}
+	sort.Ints(keys)
+	for _, k := range keys {
+		rdResult = append(rdResult, rdAuxList[k])
+	}
+	return rdResult
+}
+
 func MonitorRequest(chQALog chan *QALog,
 	chQAHist chan *RequestHistory, chQADetails chan *[]RequestDetails) {
 	rhList := make(map[int32]RequestHistory)
@@ -81,57 +97,11 @@ func MonitorRequest(chQALog chan *QALog,
 		// NOTE: this is required due to the async nature of log messages: e.g.:
 		// -> QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5
 		if len(rdList[qalog.RequestId]) >= 6 {
+			rdList[qalog.RequestId] = orderbystepRequestDetails(rdList[qalog.RequestId])
 			datadetails := rdList[qalog.RequestId]
 			chQADetails <- &datadetails
 			delete(rdList, qalog.RequestId)
 		}
-
-		/*
-			data := rhList[qalog.RequestId]
-			data.Timestamp = qalog.Timestamp
-			data.RequestId = qalog.RequestId
-			data.Duration = qalog.Duration
-			if qalog.Service == "supervisor2" && data.Supervisor == "" {
-				data.Supervisor = qalog.Host
-			}
-			if qalog.Module != "" && data.Module == "" {
-				data.Module = qalog.Module
-			}
-			if qalog.ModuleVersion != "" && data.ModuleVersion == "" {
-				data.ModuleVersion = qalog.ModuleVersion
-			}
-			if qalog.Status != 0 {
-				data.Status = qalog.Status
-			}
-			//data.Duration = qalog.Duration
-			rhList[qalog.RequestId] = data
-		*/
-
-		/*
-			rdList[qalog.RequestId] = append(rdList[qalog.RequestId],
-				RequestDetails{
-					RequestHistory: rhList[qalog.RequestId],
-					Host:           qalog.Host,
-					Step:           progress,
-					Topic:          qalog.Topic,
-					Partition:      qalog.Partition,
-					Offset:         qalog.Offset,
-				})
-		*/
-		/*
-			if progress == QAMsg6 {
-				data := rhList[qalog.RequestId]
-				data.Duration = qalog.Duration // final duration_ms from supervisor2
-				chQAHist <- &data
-
-				datadetails := rdList[qalog.RequestId]
-				chQADetails <- &datadetails
-
-				delete(rhList, qalog.RequestId)
-				delete(rdList, qalog.RequestId)
-
-			}
-		*/
 	}
 }
 
