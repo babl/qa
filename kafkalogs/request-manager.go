@@ -3,9 +3,7 @@ package kafkalogs
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strconv"
-	"time"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
@@ -13,109 +11,52 @@ import (
 	. "github.com/larskluge/babl-server/utils"
 )
 
-type RequestHistory struct {
-	Timestamp     time.Time `json:"time"`
-	RequestId     int32     `json:"rid"`
-	Supervisor    string    `json:"supervisor"`
-	Module        string    `json:"module"`
-	ModuleVersion string    `json:"moduleversion"`
-	Status        int32     `json:"status"`
-	Duration      float64   `json:"duration_ms"`
-}
-
-type RequestDetails struct {
-	RequestHistory
-	Host      string `json:"host"`
-	Step      int    `json:"step"`
-	Topic     string `json:"topic"`
-	Partition int32  `json:"partition"`
-	Offset    int32  `json:"offset"`
-}
-
-func (reqhist *RequestHistory) UnmarshalJSON(data []byte) error {
-	Z := make(map[string]interface{})
-	err := json.Unmarshal(data, &Z)
-
-	if isValidField(Z["time"], reflect.String) {
-		t1, _ := time.Parse(time.RFC3339, Z["time"].(string))
-		reqhist.Timestamp = t1
+func updateRequestHistory(qalog *QALog, rh RequestHistory) RequestHistory {
+	//qalog.DebugY()
+	//qalog.DebugZ()
+	data := rh
+	data.Timestamp = qalog.Timestamp
+	data.RequestId = qalog.RequestId
+	data.Duration = qalog.Duration
+	if data.Supervisor == "" && qalog.Service == "supervisor2" {
+		data.Supervisor = qalog.Host
 	}
-	reqhist.RequestId = getFieldDataInt32(Z["rid"])
-	reqhist.Supervisor = getFieldDataString(Z["supervisor"])
-	reqhist.Module = getFieldDataString(Z["module"])
-	reqhist.ModuleVersion = getFieldDataString(Z["moduleversion"])
-	reqhist.Status = getFieldDataInt32(Z["status"])
-	reqhist.Duration = getFieldDataFloat64(Z["duration_ms"])
-	return err
-}
-
-func (reqhist *RequestHistory) Debug() {
-	rhJson, _ := json.Marshal(reqhist)
-	fmt.Printf("%s\n", rhJson)
-}
-
-func (reqdet *RequestDetails) ManualUnmarshalJSON(Z map[string]interface{}) error {
-
-	if isValidField(Z["time"], reflect.String) {
-		t1, _ := time.Parse(time.RFC3339, Z["time"].(string))
-		reqdet.Timestamp = t1
+	if data.Module == "" && qalog.Module != "" {
+		data.Module = qalog.Module
 	}
-	reqdet.RequestId = getFieldDataInt32(Z["rid"])
-	reqdet.Supervisor = getFieldDataString(Z["supervisor"])
-	reqdet.Module = getFieldDataString(Z["module"])
-	reqdet.ModuleVersion = getFieldDataString(Z["moduleversion"])
-	reqdet.Status = getFieldDataInt32(Z["status"])
-	reqdet.Duration = getFieldDataFloat64(Z["duration_ms"])
-
-	reqdet.Host = getFieldDataString(Z["host"])
-	reqdet.Step = getFieldDataInt(Z["step"])
-	reqdet.Topic = getFieldDataString(Z["topic"])
-	reqdet.Partition = getFieldDataInt32(Z["partition"])
-	reqdet.Offset = getFieldDataInt32(Z["offset"])
-
-	return nil
+	if data.ModuleVersion == "" && qalog.ModuleVersion != "" {
+		data.ModuleVersion = qalog.ModuleVersion
+	}
+	if qalog.Status != 0 {
+		data.Status = qalog.Status
+	}
+	data.Duration = qalog.Duration
+	return data
 }
 
-func (reqdet *RequestDetails) Debug() {
-	rhJson, _ := json.Marshal(reqdet)
-	fmt.Printf("%s\n", rhJson)
+func updateRequestDetails(progress int, qalog *QALog) RequestDetails {
+	data := RequestDetails{
+		RequestHistory: RequestHistory{
+			Timestamp:     qalog.Timestamp,
+			RequestId:     qalog.RequestId,
+			Module:        qalog.Module,
+			ModuleVersion: qalog.ModuleVersion,
+			Status:        qalog.Status,
+			Duration:      qalog.Duration,
+		},
+		Host:      qalog.Host,
+		Step:      progress,
+		Topic:     qalog.Topic,
+		Partition: qalog.Partition,
+		Offset:    qalog.Offset,
+	}
+	data.Duration = qalog.Duration
+	if qalog.Service == "supervisor2" {
+		data.Supervisor = qalog.Host
+	}
+	//data.Debug()
+	return data
 }
-
-/*
-RESTAPI: GET /api/request/logs
-{
-“timestamp” : ”2016-08-04T09:55:06Z”,
-“requestid” : “123456”,
-“supervisor” : “babl-queue1”,
-“module” : “larskluge/bablbot”,
-“duration_ms” : 125.75,
-“status” : SUCCESS		// [‘SUCCESS’, ‘FAIL’, ‘TIMEOUT’]
-}
-
-RESTAPI: GET /api/request/details/12345
-[{
-“timestamp” : ”2016-08-04T09:55:06Z”,
-“step” : “1”,
-“requestid” : “123456”,
-“supervisor” : “babl-queue1”,
-“module” : “larskluge/string-upcase”,
-“topic” : “qa-logs”,
-“partition” : “0”,
-“offset” : “55”,
-“duration_ms” : 5.325,
-},{
-“timestamp” : ”2016-08-04T09:55:06Z”,
-“step” : “2”,
-“requestid” : “123456”,
-“supervisor” : “babl-queue1”,
-“module” : “larskluge/string-upcase”,
-“topic” : “babl.larskluge.StringUpcase.IO”,
-“partition” : “0”,
-“offset” : “15”,
-“duration_ms” : 55.125,
-},{...},
-{... “step” : 6}]
-*/
 
 func MonitorRequest(chQALog chan *QALog,
 	chQAHist chan *RequestHistory, chQADetails chan *[]RequestDetails) {
@@ -124,56 +65,80 @@ func MonitorRequest(chQALog chan *QALog,
 
 	for qalog := range chQALog {
 		progress := CheckMessageProgress(qalog)
-		//fmt.Println("MonitorRequestHistory: ", progress)
-		//qalog.DebugY()
-		//qalog.DebugZ()
 
-		data := rhList[qalog.RequestId]
-		data.Timestamp = qalog.Timestamp
-		data.RequestId = qalog.RequestId
-		data.Duration = qalog.Duration
-		if qalog.Service == "supervisor2" && data.Supervisor == "" {
-			data.Supervisor = qalog.Host
-		}
-		if qalog.Module != "" && data.Module == "" {
-			data.Module = qalog.Module
-		}
-		if qalog.ModuleVersion != "" && data.ModuleVersion == "" {
-			data.ModuleVersion = qalog.ModuleVersion
-		}
-		if qalog.Status != 0 {
-			data.Status = qalog.Status
-		}
-		//data.Duration = qalog.Duration
-		rhList[qalog.RequestId] = data
-
-		rdList[qalog.RequestId] = append(rdList[qalog.RequestId],
-			RequestDetails{
-				RequestHistory: rhList[qalog.RequestId],
-				Host:           qalog.Host,
-				Step:           progress,
-				Topic:          qalog.Topic,
-				Partition:      qalog.Partition,
-				Offset:         qalog.Offset,
-			})
-
+		// RequestHistory: update log messages
+		rhList[qalog.RequestId] = updateRequestHistory(qalog, rhList[qalog.RequestId])
+		// RequestHistory: send data to channel if last message arrived (QAMsg6)
 		if progress == QAMsg6 {
 			data := rhList[qalog.RequestId]
-			data.Duration = qalog.Duration // final duration_ms from supervisor2
 			chQAHist <- &data
+			delete(rhList, qalog.RequestId)
+		}
 
+		// RequestDetails log messages
+		rdList[qalog.RequestId] = append(rdList[qalog.RequestId], updateRequestDetails(progress, qalog))
+		// RequestDetails: send data to channel if all 6 messages arrived (QAMsg1...QAMsg6)
+		// NOTE: this is required due to the async nature of log messages: e.g.:
+		// -> QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5
+		if len(rdList[qalog.RequestId]) >= 6 {
 			datadetails := rdList[qalog.RequestId]
 			chQADetails <- &datadetails
-
-			delete(rhList, qalog.RequestId)
 			delete(rdList, qalog.RequestId)
 		}
+
+		/*
+			data := rhList[qalog.RequestId]
+			data.Timestamp = qalog.Timestamp
+			data.RequestId = qalog.RequestId
+			data.Duration = qalog.Duration
+			if qalog.Service == "supervisor2" && data.Supervisor == "" {
+				data.Supervisor = qalog.Host
+			}
+			if qalog.Module != "" && data.Module == "" {
+				data.Module = qalog.Module
+			}
+			if qalog.ModuleVersion != "" && data.ModuleVersion == "" {
+				data.ModuleVersion = qalog.ModuleVersion
+			}
+			if qalog.Status != 0 {
+				data.Status = qalog.Status
+			}
+			//data.Duration = qalog.Duration
+			rhList[qalog.RequestId] = data
+		*/
+
+		/*
+			rdList[qalog.RequestId] = append(rdList[qalog.RequestId],
+				RequestDetails{
+					RequestHistory: rhList[qalog.RequestId],
+					Host:           qalog.Host,
+					Step:           progress,
+					Topic:          qalog.Topic,
+					Partition:      qalog.Partition,
+					Offset:         qalog.Offset,
+				})
+		*/
+		/*
+			if progress == QAMsg6 {
+				data := rhList[qalog.RequestId]
+				data.Duration = qalog.Duration // final duration_ms from supervisor2
+				chQAHist <- &data
+
+				datadetails := rdList[qalog.RequestId]
+				chQADetails <- &datadetails
+
+				delete(rhList, qalog.RequestId)
+				delete(rdList, qalog.RequestId)
+
+			}
+		*/
 	}
 }
 
 func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chQAHist chan *RequestHistory) {
 	for reqhist := range chQAHist {
 		rhJson, _ := json.Marshal(reqhist)
+		//fmt.Printf("%s\n", rhJson)
 		kafka.SendMessage(producer, strconv.FormatInt(int64(reqhist.RequestId), 10), topic, &rhJson)
 	}
 }
