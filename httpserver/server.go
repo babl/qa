@@ -2,11 +2,13 @@ package httpserver
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
+	. "github.com/larskluge/babl-server/utils"
 )
 
 func GetVarsBlockSize(r *http.Request, defaultvalue int64) int64 {
@@ -25,7 +27,11 @@ func GetVarsBlockSize(r *http.Request, defaultvalue int64) int64 {
 func StartHttpServer(listen string,
 	HandlerRequestHistory func(w http.ResponseWriter, r *http.Request),
 	HandlerRequestDetails func(w http.ResponseWriter, r *http.Request)) {
-	const dir = "./httpserver/static"
+	pwd, err := os.Getwd()
+	Check(err)
+	dir := pwd + "/httpserver/static"
+	//fmt.Println("WorkingDir: ", pwd)
+	//fmt.Println("HttpServer: ", dir)
 	r := mux.NewRouter()
 
 	// REST API
