@@ -2,7 +2,6 @@ package kafkalogs
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
 	"strconv"
 
@@ -108,7 +107,7 @@ func MonitorRequest(chQALog chan *QALog,
 func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chQAHist chan *RequestHistory) {
 	for reqhist := range chQAHist {
 		rhJson, _ := json.Marshal(reqhist)
-		fmt.Printf("%s\n", rhJson)
+		//fmt.Printf("%s\n", rhJson)
 		kafka.SendMessage(producer, strconv.FormatInt(int64(reqhist.RequestId), 10), topic, &rhJson)
 	}
 }
@@ -136,7 +135,7 @@ func SaveRequestDetails(producer *sarama.SyncProducer, topic string, chQADetails
 	for reqdetails := range chQADetails {
 		rid := (*reqdetails)[0].RequestId
 		rhJson, _ := json.Marshal(reqdetails)
-		fmt.Printf("%s\n", rhJson)
+		//fmt.Printf("%s\n", rhJson)
 		kafka.SendMessage(producer, strconv.FormatInt(int64(rid), 10), topic, &rhJson)
 	}
 }

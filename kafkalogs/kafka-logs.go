@@ -22,14 +22,14 @@ func ListenToLogsQA(client *sarama.Client, topic string, chQALog chan *QALog) {
 		// parse top level log message (include logstash metadata)
 		qamdata := QAMetadata{}
 		err1 := qamdata.UnmarshalJSON(msg.Value)
-		Check(err1)
 		//qamdata.DebugY()
+		Check(err1)
 
 		// parse low level log message (logstash "message" property)
 		qamsg := QAMessage{}
 		err2 := qamsg.UnmarshalJSON([]byte(qamdata.Y["message"].(string)))
-		Check(err2)
 		//qamsg.DebugZ()
+		Check(err2)
 
 		if qamsg.RequestId > 0 {
 			qalog := QALog{qamdata, qamsg}
