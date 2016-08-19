@@ -37,19 +37,51 @@ function getRequestDetails(rid) {
     //   alert("No details data found!")
     //   return
     // }
-    var details
-    $.each(data, function(i, item) {
-      console.log(item)
-      details += ''
-    });
 
+    var details =
+      "<table class=\"table table-condensed table-bordered table-striped table-hover\">"+
+      "    <thead>"+
+      "      <tr>"+
+      "        <th>Setp</th>"+
+      "        <th>Host</th>"+
+      "        <th>Supervisor</th>"+
+      "        <th>Module</th>"+
+      "        <th>ModuleVer</th>"+
+      "        <th>Status</th>"+
+      "        <th>Topic</th>"+
+      "        <th>Partition</th>"+
+      "        <th>Offset</th>"+
+      "        <th>Duration [ms]</th>"+
+      "        </tr>"+
+      "    </thead>";
+
+    $.each(data, function(i, item) {
+      //console.log(item)
+      console.log(details)
+      details +=
+        "<tbody id=\""+data[0].rid+"\" class=\"bodycontent\">"+
+        "  <tr class=\"trcontent\">"+
+        "    <td>"+item.step+"</td>"+
+        "    <td>"+item.host+"</td>"+
+        "    <td>"+item.supervisor+"</td>"+
+        "    <td>"+item.module+"</td>"+
+        "    <td>"+item.moduleversion+"</td>"+
+        "    <td>"+item.status+"</td>"+
+        "    <td>"+item.topic+"</td>"+
+        "    <td>"+item.partition+"</td>"+
+        "    <td>"+item.offset+"</td>"+
+        "    <td>"+item.duration_ms+"</td>"+
+        "  </tr>"+
+        "</tbody>";
+    });
+    details += "</table>";
 
     $("#"+rid).append(
       "    <tr class=\"trcontent\">"+
       "        <th class=\"text-center\">"+
       "            <span class=\"glyphicon glyphicon-info-sign\" aria-hidden=\"true\"></span>"+
       "        </th>"+
-      "        <td colspan=\"7\"></td>"+
+      "        <td colspan=\"7\">"+details+"</td>"+
       "    </tr>")
   });
 }
