@@ -1,3 +1,9 @@
+(function () {
+  $(window).load(function() {
+    updateRequestHistory();
+  });
+})();
+
 function updateRequestHistory() {
   blocksize = $("#datasize").val()
   var urlRequestHistory = "/api/request/history?blocksize="+blocksize;
@@ -5,6 +11,7 @@ function updateRequestHistory() {
     format: "json"
   })
   .done(function(data) {
+    var count = data.length
     var data_reverse = data.slice(0).reverse();
     $(".bodycontent").remove()
     $.each(data_reverse, function(i, item) {
@@ -22,8 +29,14 @@ function updateRequestHistory() {
             "<td>"+item.status+"</td>"+
             "<td>"+item.duration_ms+"</td>"+
           "</tr>"+
-        "</tbody>")
+        "</tbody>");
     });
+    $("#tableData").append(
+      "<tbody class=\"bodycontent\">"+
+      "  <tr class=\"trcontent\">"+
+      "    <td colspan=\"8\" class=\"text-center\"><h6>Found "+count+" records</h6></td>"+
+      "  </tr>"+
+      "</tbody>");
   });
 }
 
@@ -33,16 +46,11 @@ function getRequestDetails(rid) {
     format: "json"
   })
   .done(function(data) {
-    // if (data.length == 0) {
-    //   alert("No details data found!")
-    //   return
-    // }
-
     var details =
       "<table class=\"table table-condensed table-bordered table-striped table-hover\">"+
       "    <thead>"+
       "      <tr>"+
-      "        <th>Setp</th>"+
+      "        <th>Step</th>"+
       "        <th>Host</th>"+
       "        <th>Supervisor</th>"+
       "        <th>Module</th>"+
@@ -56,10 +64,8 @@ function getRequestDetails(rid) {
       "    </thead>";
 
     $.each(data, function(i, item) {
-      //console.log(item)
-      console.log(details)
       details +=
-        "<tbody id=\""+data[0].rid+"\" class=\"bodycontent\">"+
+        "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent\">"+
         "  <tr class=\"trcontent\">"+
         "    <td>"+item.step+"</td>"+
         "    <td>"+item.host+"</td>"+
