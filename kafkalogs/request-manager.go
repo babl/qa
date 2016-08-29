@@ -121,9 +121,8 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 		log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request History message")
 
 		reqhist := RequestHistory{}
-		err1 := reqhist.UnmarshalJSON(msg.Value)
+		reqhist.UnmarshalJSON(msg.Value)
 		//reqhist.Debug()
-		Check(err1)
 		rhList = append(rhList, reqhist)
 		msg.Processed <- "success"
 	}
