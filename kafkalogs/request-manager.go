@@ -125,7 +125,7 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 		//reqhist.Debug()
 		Check(err1)
 		rhList = append(rhList, reqhist)
-		msg.Processed <- true
+		msg.Processed <- "success"
 	}
 	rhJson, _ := json.Marshal(rhList)
 	return rhJson
@@ -163,7 +163,7 @@ func ReadRequestDetails(client *sarama.Client, topic string, requestid string) [
 				rdList = append(rdList, reqdet)
 			}
 		}
-		msg.Processed <- true
+		msg.Processed <- "success"
 	}
 	rhJson, _ := json.Marshal(rdList)
 	return rhJson

@@ -35,7 +35,7 @@ func ListenToLogsQA(client *sarama.Client, topic string, chQALog chan *QALog) {
 			qalog := QALog{qamdata, qamsg}
 			go func() { chQALog <- &qalog }()
 		}
-		msg.Processed <- true
+		msg.Processed <- "success"
 	}
 	panic("listenToQAMessages: Lost connection to Kafka")
 }
