@@ -2,6 +2,7 @@ package kafkalogs
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
 
@@ -11,48 +12,47 @@ import (
 	. "github.com/larskluge/babl-server/utils"
 )
 
-func updateRequestHistory(qalog *QALog, rh RequestHistory) RequestHistory {
-	//qalog.DebugY()
-	//qalog.DebugZ()
+func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory {
+	//qadata.DebugJson()
 	data := rh
-	data.Timestamp = qalog.Timestamp
-	data.RequestId = qalog.RequestId
-	data.Duration = qalog.Duration
-	if data.Supervisor == "" && qalog.Service == "supervisor2" {
-		data.Supervisor = qalog.Host
+	data.Timestamp = qadata.Timestamp
+	data.RequestId = qadata.RequestId
+	data.Duration = qadata.Duration
+	if data.Supervisor == "" && qadata.Service == "supervisor2" {
+		data.Supervisor = qadata.Host
 	}
-	if data.Module == "" && qalog.Module != "" {
-		data.Module = qalog.Module
+	if data.Module == "" && qadata.Module != "" {
+		data.Module = qadata.Module
 	}
-	if data.ModuleVersion == "" && qalog.ModuleVersion != "" {
-		data.ModuleVersion = qalog.ModuleVersion
+	if data.ModuleVersion == "" && qadata.ModuleVersion != "" {
+		data.ModuleVersion = qadata.ModuleVersion
 	}
-	if qalog.Status != 0 {
-		data.Status = qalog.Status
+	if qadata.Status != 0 {
+		data.Status = qadata.Status
 	}
-	data.Duration = qalog.Duration
+	data.Duration = qadata.Duration
 	return data
 }
 
-func updateRequestDetails(progress int, qalog *QALog) RequestDetails {
+func updateRequestDetails(progress int, qadata *QAJsonData) RequestDetails {
 	data := RequestDetails{
 		RequestHistory: RequestHistory{
-			Timestamp:     qalog.Timestamp,
-			RequestId:     qalog.RequestId,
-			Module:        qalog.Module,
-			ModuleVersion: qalog.ModuleVersion,
-			Status:        qalog.Status,
-			Duration:      qalog.Duration,
+			Timestamp:     qadata.Timestamp,
+			RequestId:     qadata.RequestId,
+			Module:        qadata.Module,
+			ModuleVersion: qadata.ModuleVersion,
+			Status:        qadata.Status,
+			Duration:      qadata.Duration,
 		},
-		Host:      qalog.Host,
+		Host:      qadata.Host,
 		Step:      progress,
-		Topic:     qalog.Topic,
-		Partition: qalog.Partition,
-		Offset:    qalog.Offset,
+		Topic:     qadata.Topic,
+		Partition: qadata.Partition,
+		Offset:    qadata.Offset,
 	}
-	data.Duration = qalog.Duration
-	if qalog.Service == "supervisor2" {
-		data.Supervisor = qalog.Host
+	data.Duration = qadata.Duration
+	if qadata.Service == "supervisor2" {
+		data.Supervisor = qadata.Host
 	}
 	//data.Debug()
 	return data
@@ -73,33 +73,33 @@ func orderbystepRequestDetails(rdOrigin []RequestDetails) []RequestDetails {
 	return rdResult
 }
 
-func MonitorRequest(chQALog chan *QALog,
+func MonitorRequest(chQAData chan *QAJsonData,
 	chQAHist chan *RequestHistory, chQADetails chan *[]RequestDetails) {
 	rhList := make(map[int32]RequestHistory)
 	rdList := make(map[int32][]RequestDetails)
 
-	for qalog := range chQALog {
-		progress := CheckMessageProgress(qalog)
+	for qadata := range chQAData {
+		progress := CheckMessageProgress(qadata)
 
 		// RequestHistory: update log messages
-		rhList[qalog.RequestId] = updateRequestHistory(qalog, rhList[qalog.RequestId])
+		rhList[qadata.RequestId] = updateRequestHistory(qadata, rhList[qadata.RequestId])
 		// RequestHistory: send data to channel if last message arrived (QAMsg6)
 		if progress == QAMsg6 {
-			data := rhList[qalog.RequestId]
+			data := rhList[qadata.RequestId]
 			chQAHist <- &data
-			delete(rhList, qalog.RequestId)
+			delete(rhList, qadata.RequestId)
 		}
 
 		// RequestDetails log messages
-		rdList[qalog.RequestId] = append(rdList[qalog.RequestId], updateRequestDetails(progress, qalog))
+		rdList[qadata.RequestId] = append(rdList[qadata.RequestId], updateRequestDetails(progress, qadata))
 		// RequestDetails: send data to channel if all 6 messages arrived (QAMsg1...QAMsg6)
 		// NOTE: this is required due to the async nature of log messages: e.g.:
 		// -> QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5
-		if len(rdList[qalog.RequestId]) >= 6 {
-			rdList[qalog.RequestId] = orderbystepRequestDetails(rdList[qalog.RequestId])
-			datadetails := rdList[qalog.RequestId]
+		if len(rdList[qadata.RequestId]) >= 6 {
+			rdList[qadata.RequestId] = orderbystepRequestDetails(rdList[qadata.RequestId])
+			datadetails := rdList[qadata.RequestId]
 			chQADetails <- &datadetails
-			delete(rdList, qalog.RequestId)
+			delete(rdList, qadata.RequestId)
 		}
 	}
 }
@@ -107,7 +107,7 @@ func MonitorRequest(chQALog chan *QALog,
 func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chQAHist chan *RequestHistory) {
 	for reqhist := range chQAHist {
 		rhJson, _ := json.Marshal(reqhist)
-		//fmt.Printf("%s\n", rhJson)
+		fmt.Printf("%s\n", rhJson)
 		kafka.SendMessage(producer, strconv.FormatInt(int64(reqhist.RequestId), 10), topic, &rhJson)
 	}
 }

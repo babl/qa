@@ -3,7 +3,7 @@ package kafkalogs
 import "reflect"
 
 func isValidField(y interface{}, ytype reflect.Kind) bool {
-	if y != nil && reflect.TypeOf(y).Kind() == ytype {
+	if y != nil && (reflect.TypeOf(y).Kind() == ytype) {
 		return true
 	}
 	return false
@@ -23,6 +23,17 @@ func getFieldData(x interface{}, xtype reflect.Kind) interface{} {
 	}
 	return result
 }
+
+/*
+func getFieldDataStringArray(x map[string]interface{}, fieldname string) string {
+	var result string
+	list := x["host"].([]interface{})
+	for _, v := range list {
+		result += v.(string) + ","
+	}
+	fmt.Println("Result: ", result)
+	return result
+}*/
 
 func getFieldDataString(x interface{}) string {
 	return getFieldData(x, reflect.String).(string)
