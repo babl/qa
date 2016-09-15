@@ -15,7 +15,7 @@ func configureCli() (app *cli.App) {
 		cli.StringFlag{
 			Name:  "listen, l",
 			Usage: "Host & port to listen to",
-			Value: ":8080",
+			Value: ":8888",
 		},
 		cli.StringFlag{
 			Name:  "kafka-brokers, kb",

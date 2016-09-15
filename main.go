@@ -62,8 +62,8 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	go SaveRequestDetails(s.kafkaProducer, kafkaTopicDetails, chQADetails)
 
 	// http callback function handler for Request History
-	// $ http 127.0.0.1:8080/api/request/history
-	// $ http 127.0.0.1:8080/api/request/history?blocksize=20
+	// $ http 127.0.0.1:8888/api/request/history
+	// $ http 127.0.0.1:8888/api/request/history?blocksize=20
 	HandlerRequestHistory := func(w http.ResponseWriter, r *http.Request) {
 		lastn := GetVarsBlockSize(r, 10)
 		rhJson := ReadRequestHistory(s.kafkaClient, kafkaTopicHistory, lastn)
@@ -71,7 +71,7 @@ func run(listen, kafkaBrokers string, dbg bool) {
 		w.Write(rhJson)
 	}
 	// http callback function handler for Request Details
-	// http 127.0.0.1:8080/api/request/details/12345
+	// http 127.0.0.1:8888/api/request/details/12345
 	HandlerRequestDetails := func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		//lastn := GetVarsBlockSize(r, 10)
