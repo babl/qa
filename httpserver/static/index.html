@@ -37,7 +37,8 @@
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <form class="navbar-form navbar-left">
                     <div class="form-group">
-                        <input id="datasize" type="text" class="form-control" placeholder="maxlines" value="">
+                        <input id="datasize" type="text" class="form-control" placeholder="maxlines" size="5" value="20">&nbsp;
+                        <a href="javascript:void(0)"><span class="glyphicon glyphicon-refresh" aria-hidden="true" onclick="updateRequestHistory()"></span></a>
                     </div>
                 </form>
             </div>
@@ -51,9 +52,7 @@
         <table id="tableData" class="table table-condensed table-bordered table-striped table-hover">
             <thead>
                 <tr>
-                    <th class="text-center">
-                        <a href="javascript:void(0)"><span class="glyphicon glyphicon-refresh" aria-hidden="true" onclick="updateRequestHistory()"></span></a>
-                    </th>
+                    <th class="text-center"></th>
                     <th>Time</th>
                     <th>RequestId</th>
                     <th>Supervisor</th>
@@ -66,9 +65,7 @@
 
             <tbody class="bodycontent">
                 <tr class="trcontent">
-                    <th class="text-center">
-                        <a href="javascript:void(0)"><span class="glyphicon glyphicon-plus" aria-hidden="true" onclick="getRequestDetails(0)"></span></a>
-                    </th>
+                    <th class="text-center"></th>
                     <td></td>
                     <td></td>
                     <td></td>
