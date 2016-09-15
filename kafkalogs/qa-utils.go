@@ -27,7 +27,7 @@ func getFieldData(x interface{}, xtype reflect.Kind) interface{} {
 /*
 func getFieldDataStringArray(x map[string]interface{}, fieldname string) string {
 	var result string
-	list := x["host"].([]interface{})
+	list := x[fieldname].([]interface{})
 	for _, v := range list {
 		result += v.(string) + ","
 	}
