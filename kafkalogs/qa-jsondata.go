@@ -11,8 +11,8 @@ import (
 
 type QAJsonData struct {
 	Type          string `json:"type"`
-	Service       string `json:"service"`
-	Host          string `json:"hostname"`
+	Supervisor    string `json:"supervisor"`
+	Host          string `json:"host"`
 	Module        string `json:"module"`
 	ModuleVersion string `json:"module_version"`
 	ImageName     string `json:"image_name"`
@@ -38,8 +38,8 @@ func (qadata *QAJsonData) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &qadata.Z)
 
 	qadata.Type = getFieldDataString(qadata.Z["type"])
-	qadata.Host = getFieldDataString(qadata.Z["hostname"])
-	qadata.Service = getFieldDataString(qadata.Z["service"])
+	qadata.Host = getFieldDataString(qadata.Z["host"])
+	qadata.Supervisor = getFieldDataString(qadata.Z["supervisor"])
 	qadata.Module = getFieldDataString(qadata.Z["module"])
 	qadata.ModuleVersion = getFieldDataString(qadata.Z["module_version"])
 	qadata.ImageName = getFieldDataString(qadata.Z["image_name"])

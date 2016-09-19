@@ -13,7 +13,7 @@ import (
 #6 [supervisor2]	=>	"msg": "Module responded"
 */
 const (
-	supervisor = "supervisor"
+	supervisor = "supervisor2"
 	msg1       = "Producer: message sent"
 	msg2       = "New Group Message Received"
 	msg3       = "call"
@@ -33,13 +33,13 @@ const (
 
 func CheckMessageProgress(qadata *QAJsonData) int {
 	result := int(0)
-	if strings.Contains(qadata.Message, msg1) && !strings.Contains(qadata.Topic, supervisor) {
+	if strings.Contains(qadata.Message, msg1) && !strings.Contains(qadata.Supervisor, supervisor) {
 		result = QAMsg1
 	} else if strings.Contains(qadata.Message, msg2) {
 		result = QAMsg2
 	} else if strings.Contains(qadata.Message, msg3) {
 		result = QAMsg3
-	} else if strings.Contains(qadata.Message, msg4) && strings.Contains(qadata.Topic, supervisor) {
+	} else if strings.Contains(qadata.Message, msg4) && strings.Contains(qadata.Supervisor, supervisor) {
 		result = QAMsg4
 	} else if strings.Contains(qadata.Message, msg5) {
 		result = QAMsg5

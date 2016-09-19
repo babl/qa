@@ -2,7 +2,6 @@ package kafkalogs
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
 	"strconv"
 
@@ -18,8 +17,8 @@ func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory 
 	data.Timestamp = qadata.Timestamp
 	data.RequestId = qadata.RequestId
 	data.Duration = qadata.Duration
-	if data.Supervisor == "" && qadata.Service == "supervisor2" {
-		data.Supervisor = qadata.Host
+	if data.Supervisor == "" && qadata.Supervisor != "" {
+		data.Supervisor = qadata.Supervisor
 	}
 	if data.Module == "" && qadata.Module != "" {
 		data.Module = qadata.Module
@@ -31,14 +30,18 @@ func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory 
 		data.Status = qadata.Status
 	}
 	data.Duration = qadata.Duration
+	data.Message = qadata.Message
+	//data.Debug()
 	return data
 }
 
 func updateRequestDetails(progress int, qadata *QAJsonData) RequestDetails {
+	//qadata.DebugJson()
 	data := RequestDetails{
 		RequestHistory: RequestHistory{
 			Timestamp:     qadata.Timestamp,
 			RequestId:     qadata.RequestId,
+			Message:       qadata.Message,
 			Module:        qadata.Module,
 			ModuleVersion: qadata.ModuleVersion,
 			Status:        qadata.Status,
@@ -51,9 +54,7 @@ func updateRequestDetails(progress int, qadata *QAJsonData) RequestDetails {
 		Offset:    qadata.Offset,
 	}
 	data.Duration = qadata.Duration
-	if qadata.Service == "supervisor2" {
-		data.Supervisor = qadata.Host
-	}
+	data.Supervisor = qadata.Supervisor
 	//data.Debug()
 	return data
 }
@@ -79,6 +80,7 @@ func MonitorRequest(chQAData chan *QAJsonData,
 	rdList := make(map[int32][]RequestDetails)
 
 	for qadata := range chQAData {
+		//qadata.DebugJson()
 		progress := CheckMessageProgress(qadata)
 
 		// RequestHistory: update log messages
@@ -107,7 +109,7 @@ func MonitorRequest(chQAData chan *QAJsonData,
 func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chQAHist chan *RequestHistory) {
 	for reqhist := range chQAHist {
 		rhJson, _ := json.Marshal(reqhist)
-		fmt.Printf("%s\n", rhJson)
+		//fmt.Printf("%s\n", rhJson)
 		kafka.SendMessage(producer, strconv.FormatInt(int64(reqhist.RequestId), 10), topic, &rhJson)
 	}
 }
