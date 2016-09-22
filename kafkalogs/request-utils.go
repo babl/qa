@@ -20,6 +20,7 @@ const (
 	msg4       = "Producer: message sent"
 	msg5       = "New Message Received"
 	msg6       = "Module responded"
+	msgTimeout = "qa-service detected timeout"
 )
 
 const (
@@ -29,22 +30,25 @@ const (
 	QAMsg4
 	QAMsg5
 	QAMsg6
+	QAMsgTimeout = 999
 )
 
 func CheckMessageProgress(qadata *QAJsonData) int {
 	result := int(0)
-	if strings.Contains(qadata.Message, msg1) && !strings.Contains(qadata.Supervisor, supervisor) {
+	if strings.Contains(qadata.Message, msg1) && strings.Contains(qadata.Supervisor, supervisor) {
 		result = QAMsg1
 	} else if strings.Contains(qadata.Message, msg2) {
 		result = QAMsg2
 	} else if strings.Contains(qadata.Message, msg3) {
 		result = QAMsg3
-	} else if strings.Contains(qadata.Message, msg4) && strings.Contains(qadata.Supervisor, supervisor) {
+	} else if strings.Contains(qadata.Message, msg4) && !strings.Contains(qadata.Supervisor, supervisor) {
 		result = QAMsg4
 	} else if strings.Contains(qadata.Message, msg5) {
 		result = QAMsg5
 	} else if strings.Contains(qadata.Message, msg6) {
 		result = QAMsg6
+	} else if strings.Contains(qadata.Message, msgTimeout) {
+		result = QAMsgTimeout
 	}
 	return result
 }

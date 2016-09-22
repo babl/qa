@@ -5,7 +5,12 @@
 })();
 
 function updateRequestHistory() {
-  blocksize = $("#datasize").val()
+  var status_green = "#88CF85"
+  var status_red = "#F87070"
+  var duration_green = "#48B444"
+  var duration_orange = "#F4B27B"
+  var duration_red = "#F53636"
+  var blocksize = $("#datasize").val()
   var urlRequestHistory = "/api/request/history?blocksize="+blocksize;
   $.getJSON( urlRequestHistory, {
     format: "json"
@@ -15,6 +20,15 @@ function updateRequestHistory() {
     var data_reverse = data.slice(0).reverse();
     $(".bodycontent").remove()
     $.each(data_reverse, function(i, item) {
+      var status_color = item.status == 200 ? status_green : status_red;
+      var duration_color;
+      if (item.duration_ms < 1000) {
+        duration_color = duration_green;
+      } else if (item.duration_ms >= 1000 && item.duration_ms < 1500) {
+        duration_color = duration_orange;
+      } else {
+        duration_color = duration_red;
+      }
       $("#tableData").append(
         "<tbody id=\""+item.rid+"\" class=\"bodycontent\">"+
           "<tr class=\"trcontent\">"+
@@ -26,8 +40,8 @@ function updateRequestHistory() {
             "<td>"+item.supervisor+"</td>"+
             "<td>"+item.module+"</td>"+
             "<td>"+item.moduleversion+"</td>"+
-            "<td>"+item.status+"</td>"+
-            "<td>"+item.duration_ms+"</td>"+
+            "<td><span style=\"color:"+duration_color+"\">"+item.duration_ms+"</span></td>"+
+            "<td bgcolor=\""+status_color+"\">"+item.status+"</td>"+
           "</tr>"+
         "</tbody>");
     });
@@ -55,11 +69,12 @@ function getRequestDetails(rid) {
       "        <th>Supervisor</th>"+
       "        <th>Module</th>"+
       "        <th>ModuleVer</th>"+
-      "        <th>Status</th>"+
+      "        <th>Message</th>"+
       "        <th>Topic</th>"+
       "        <th>Partition</th>"+
       "        <th>Offset</th>"+
       "        <th>Duration [ms]</th>"+
+      "        <th>Status</th>"+
       "        </tr>"+
       "    </thead>";
 
@@ -72,11 +87,12 @@ function getRequestDetails(rid) {
         "    <td>"+item.supervisor+"</td>"+
         "    <td>"+item.module+"</td>"+
         "    <td>"+item.moduleversion+"</td>"+
-        "    <td>"+item.status+"</td>"+
+        "    <td>"+item.message+"</td>"+
         "    <td>"+item.topic+"</td>"+
         "    <td>"+item.partition+"</td>"+
         "    <td>"+item.offset+"</td>"+
         "    <td>"+item.duration_ms+"</td>"+
+        "    <td>"+item.status+"</td>"+
         "  </tr>"+
         "</tbody>";
     });
@@ -87,7 +103,7 @@ function getRequestDetails(rid) {
       "        <th class=\"text-center\">"+
       "            <span class=\"glyphicon glyphicon-info-sign\" aria-hidden=\"true\"></span>"+
       "        </th>"+
-      "        <td colspan=\"7\">"+details+"</td>"+
+      "        <td colspan=\"8\">"+details+"</td>"+
       "    </tr>")
   });
 }

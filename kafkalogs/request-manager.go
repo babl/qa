@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
@@ -74,19 +75,57 @@ func orderbystepRequestDetails(rdOrigin []RequestDetails) []RequestDetails {
 	return rdResult
 }
 
+func monitorRdTimeout(rdTL *map[int32]time.Time, timeout time.Duration, chQAData chan *QAJsonData, statuscode int32) {
+	for {
+		timer1 := time.NewTimer(time.Second)
+		<-timer1.C
+		for k, v := range *rdTL {
+			// verify if request was completed with success
+			if v == (time.Time{}) {
+				delete(*rdTL, k)
+			} else {
+				elapsed := time.Since(v)
+				if elapsed > timeout {
+					timeoutData := QAJsonData{}
+					timeoutData.RequestId = k
+					timeoutData.Duration = float64(elapsed) / float64(time.Millisecond)
+					timeoutData.Level = "error"
+					timeoutData.Status = statuscode
+					timeoutData.Timestamp = time.Now()
+					timeoutData.Message = "qa-service detected timeout!"
+					chQAData <- &timeoutData
+					delete(*rdTL, k)
+				}
+			}
+		}
+	}
+}
+
 func MonitorRequest(chQAData chan *QAJsonData,
 	chQAHist chan *RequestHistory, chQADetails chan *[]RequestDetails) {
 	rhList := make(map[int32]RequestHistory)
 	rdList := make(map[int32][]RequestDetails)
+	rdTimeout := make(map[int32]time.Time)
+	timeout := 5 * time.Minute
+	const timeoutStatus int32 = 408
+
+	// monitor rdTimeout list to check if request takes longer than timeout
+	// if request timeout occurs than sends data to chQAData channel
+	go monitorRdTimeout(&rdTimeout, timeout, chQAData, timeoutStatus)
 
 	for qadata := range chQAData {
 		//qadata.DebugJson()
 		progress := CheckMessageProgress(qadata)
 
+		// update rdTimeout with now(): exclude previous timedout requests
+		if qadata.Status != timeoutStatus {
+			rdTimeout[qadata.RequestId] = time.Now()
+		}
+
 		// RequestHistory: update log messages
 		rhList[qadata.RequestId] = updateRequestHistory(qadata, rhList[qadata.RequestId])
 		// RequestHistory: send data to channel if last message arrived (QAMsg6)
-		if progress == QAMsg6 {
+		if progress == QAMsg6 || qadata.Status == timeoutStatus {
 			data := rhList[qadata.RequestId]
 			chQAHist <- &data
 			delete(rhList, qadata.RequestId)
@@ -97,11 +136,13 @@ func MonitorRequest(chQAData chan *QAJsonData,
 		// RequestDetails: send data to channel if all 6 messages arrived (QAMsg1...QAMsg6)
 		// NOTE: this is required due to the async nature of log messages: e.g.:
 		// -> QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5
-		if len(rdList[qadata.RequestId]) >= 6 {
+		if len(rdList[qadata.RequestId]) >= 6 || qadata.Status == timeoutStatus {
 			rdList[qadata.RequestId] = orderbystepRequestDetails(rdList[qadata.RequestId])
 			datadetails := rdList[qadata.RequestId]
 			chQADetails <- &datadetails
 			delete(rdList, qadata.RequestId)
+			// resets rdTimeout, to be deleted by the monitor process
+			rdTimeout[qadata.RequestId] = time.Time{}
 		}
 	}
 }
