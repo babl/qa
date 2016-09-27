@@ -75,7 +75,7 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	HandlerRequestDetails := func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		//lastn := GetVarsBlockSize(r, 10)
-		rhJson := ReadRequestDetails(s.kafkaClient, kafkaTopicDetails, vars["requestid"])
+		rhJson := ReadRequestDetails(s.kafkaClient, kafkaTopicDetails, vars["requestid"], vars["timestamp"])
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(rhJson)
 	}

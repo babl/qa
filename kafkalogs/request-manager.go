@@ -2,6 +2,7 @@ package kafkalogs
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strconv"
 	"time"
@@ -182,31 +183,99 @@ func SaveRequestDetails(producer *sarama.SyncProducer, topic string, chQADetails
 	}
 }
 
-func ReadRequestDetails(client *sarama.Client, topic string, requestid string) []byte {
+func ReadRequestDetails(client *sarama.Client, topic string, requestid string, timestampStr string) []byte {
 	log.Debug("Consuming from topic: ", topic)
-	lastn := int64(100)
-	rdList := []RequestDetails{}
-	ch := make(chan *kafka.ConsumerData)
-	go kafka.ConsumeLastN(client, topic, 0, lastn, ch) // need to replace with a full scan (stop after all steps)
 
-	for msg := range ch {
-		log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request History message")
+	offsetFrom, offsetTo := kafka.ConsumeGetOffsetValues(client, topic, 0)
+	fmt.Printf("ReadRequestDetails => OffestFrom=%d OffsetTo=%d Timestamp=%s", offsetFrom, offsetTo, timestampStr)
 
+	callbackPayloadCompare := func(refObj interface{}, payload []byte) int {
+		result := 0
+		timestamp := refObj.(time.Time)
+		fmt.Printf("=> callbackPayloadCompare: RefObject=%s\n", timestamp.String())
+
+		// parse full arraymap for a single message datils payload
 		var arraymap []map[string]interface{}
-		err := json.Unmarshal(msg.Value, &arraymap)
+		err := json.Unmarshal(payload, &arraymap)
 		Check(err)
-
-		for _, v := range arraymap {
-			rid, _ := strconv.ParseInt(requestid, 10, 32)
-			if getFieldDataInt32(v["rid"]) == int32(rid) {
-				reqdet := RequestDetails{}
-				reqdet.ManualUnmarshalJSON(v)
-				//reqdet.Debug()
-				rdList = append(rdList, reqdet)
-			}
+		// check the first array for the time property
+		reqdet := RequestDetails{}
+		reqdet.ManualUnmarshalJSON(arraymap[0])
+		//reqdet.Debug()
+		//fmt.Printf("callbackPayloadCompare: Found timestamp: %s\n", reqdet.Timestamp.String())
+		if reqdet.Timestamp.Before(timestamp) {
+			fmt.Printf("==> payload %s timestamp is Before reference %s\n", reqdet.Timestamp.String(), timestamp.String())
+			result = -1
+		} else if reqdet.Timestamp.Equal(timestamp) {
+			fmt.Printf("==> payload %s timestamp Equals reference %s\n", reqdet.Timestamp.String(), timestamp.String())
+			result = 0
+		} else if reqdet.Timestamp.After(timestamp) {
+			fmt.Printf("==> payload %s timestamp is After reference %s\n", reqdet.Timestamp.String(), timestamp.String())
+			result = 1
 		}
-		msg.Processed <- "success"
+		return result
+	}
+
+	//timestamp, e := time.Parse(time.RFC3339, "2016-09-22T22:30:30Z")
+	timestamp, e := time.Parse(time.RFC3339, timestampStr)
+	Check(e)
+	offset := kafka.ConsumeBisectPayload(client, topic, 0, timestamp, offsetFrom, offsetTo, callbackPayloadCompare)
+	fmt.Println("Offset = ", offset)
+	i := offset - 10
+	if i < offsetFrom {
+		i = offsetFrom
+	}
+	j := offset + 10
+	if j < offsetTo {
+		j = offsetTo
+	}
+	msgData := kafka.ConsumeSearchByKeyinRange(client, topic, 0, requestid, i, j)
+	fmt.Println("---------------------------------------------------------------")
+	fmt.Println("Offset result = ", msgData)
+	fmt.Println("---------------------------------------------------------------")
+
+	var arraymap []map[string]interface{}
+	errJson := json.Unmarshal(msgData.Value, &arraymap)
+	Check(errJson)
+
+	rdList := []RequestDetails{}
+	for _, v := range arraymap {
+		rid, _ := strconv.ParseInt(requestid, 10, 32)
+		if getFieldDataInt32(v["rid"]) == int32(rid) {
+			reqdet := RequestDetails{}
+			reqdet.ManualUnmarshalJSON(v)
+			//reqdet.Debug()
+			rdList = append(rdList, reqdet)
+		}
 	}
 	rhJson, _ := json.Marshal(rdList)
 	return rhJson
+
+	/*
+		lastn := int64(100)
+		rdList := []RequestDetails{}
+		ch := make(chan *kafka.ConsumerData)
+		go kafka.ConsumeLastN(client, topic, 0, lastn, ch) // need to replace with a full scan (stop after all steps)
+
+		for msg := range ch {
+			log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request History message")
+
+			var arraymap []map[string]interface{}
+			err := json.Unmarshal(msg.Value, &arraymap)
+			Check(err)
+
+			for _, v := range arraymap {
+				rid, _ := strconv.ParseInt(requestid, 10, 32)
+				if getFieldDataInt32(v["rid"]) == int32(rid) {
+					reqdet := RequestDetails{}
+					reqdet.ManualUnmarshalJSON(v)
+					//reqdet.Debug()
+					rdList = append(rdList, reqdet)
+				}
+			}
+			msg.Processed <- "success"
+		}
+		rhJson, _ := json.Marshal(rdList)
+		return rhJson
+	*/
 }

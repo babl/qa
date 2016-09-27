@@ -37,7 +37,7 @@ func StartHttpServer(listen string,
 	// REST API
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET").Queries("blocksize", "{blocksize}")
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET")
-	r.HandleFunc("/api/request/details/{requestid:[0-9]+}", HandlerRequestDetails).Methods("GET")
+	r.HandleFunc("/api/request/details/{requestid:[0-9]+}/{timestamp}", HandlerRequestDetails).Methods("GET")
 
 	// Static files and assets
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(dir))))

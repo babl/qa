@@ -13,7 +13,8 @@ function updateRequestHistory() {
   var blocksize = $("#datasize").val()
   var urlRequestHistory = "/api/request/history?blocksize="+blocksize;
   $.getJSON( urlRequestHistory, {
-    format: "json"
+    format: "json",
+    timeout: 60000
   })
   .done(function(data) {
     var count = data.length
@@ -33,7 +34,7 @@ function updateRequestHistory() {
         "<tbody id=\""+item.rid+"\" class=\"bodycontent\">"+
           "<tr class=\"trcontent\">"+
             "<th class=\"text-center\">"+
-              "<a href=\"javascript:void(0)\"><span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\" onclick=\"getRequestDetails("+item.rid+")\"></span></a>"+
+              "<a href=\"javascript:void(0)\"><span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\" onclick=\"getRequestDetails("+item.rid+",'"+item.time+"')\"></span></a>"+
             "</th>"+
             "<td>"+item.time+"</td>"+
             "<td>"+item.rid+"</td>"+
@@ -54,10 +55,11 @@ function updateRequestHistory() {
   });
 }
 
-function getRequestDetails(rid) {
-  var urlRequestDetails = "/api/request/details/"+rid;
+function getRequestDetails(rid, timestamp) {
+  var urlRequestDetails = "/api/request/details/"+rid+"/"+timestamp;
   $.getJSON(urlRequestDetails, {
-    format: "json"
+    format: "json",
+    timeout: 60000
   })
   .done(function(data) {
     var details =
