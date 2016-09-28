@@ -65,6 +65,7 @@ function getRequestDetails(rid) {
       "    <thead>"+
       "      <tr>"+
       "        <th>Step</th>"+
+      "        <th>RequestId</th>"+
       "        <th>Host</th>"+
       "        <th>Supervisor</th>"+
       "        <th>Module</th>"+
@@ -83,6 +84,7 @@ function getRequestDetails(rid) {
         "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent\">"+
         "  <tr class=\"trcontent\">"+
         "    <td>"+item.step+"</td>"+
+        "    <td>"+item.rid+"</td>"+
         "    <td>"+item.host+"</td>"+
         "    <td>"+item.supervisor+"</td>"+
         "    <td>"+item.module+"</td>"+

@@ -10,7 +10,10 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/larskluge/babl-server/kafka"
 	. "github.com/larskluge/babl-server/utils"
+	cache "github.com/muesli/cache2go"
 )
+
+const cacheDefaultExpiration = 7 * 24 * time.Hour
 
 func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory {
 	//qadata.DebugJson()
@@ -173,40 +176,56 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 	return rhJson
 }
 
-func SaveRequestDetails(producer *sarama.SyncProducer, topic string, chQADetails chan *[]RequestDetails) {
+func SaveRequestDetails(producer *sarama.SyncProducer, topic string, chQADetails chan *[]RequestDetails,
+	cacheDetails *cache.CacheTable) {
 	for reqdetails := range chQADetails {
 		rid := (*reqdetails)[0].RequestId
 		rhJson, _ := json.Marshal(reqdetails)
 		//fmt.Printf("%s\n", rhJson)
-		kafka.SendMessage(producer, strconv.FormatInt(int64(rid), 10), topic, &rhJson)
+		requestID := strconv.FormatInt(int64(rid), 10)
+		cacheDetails.Add(requestID, cacheDefaultExpiration, rhJson)
+		kafka.SendMessage(producer, requestID, topic, &rhJson)
 	}
 }
 
-func ReadRequestDetails(client *sarama.Client, topic string, requestid string) []byte {
-	log.Debug("Consuming from topic: ", topic)
-	lastn := int64(100)
+func ReadRequestDetailsFromCache(requestid string, cacheDetails *cache.CacheTable) []byte {
+	log.Debug("Reading from cache: Details %d", cacheDetails.Count())
+
+	value, err := cacheDetails.Value(requestid)
+	if err != nil {
+		rdList := []RequestDetails{}
+		rdJson, _ := json.Marshal(rdList)
+		return rdJson
+	}
+	valueData := value.Data()
+	valueByte := valueData.([]byte)
+
+	var arraymap []map[string]interface{}
+	err1 := json.Unmarshal(valueByte, &arraymap)
+	Check(err1)
+
 	rdList := []RequestDetails{}
+	for _, v := range arraymap {
+		reqdet := RequestDetails{}
+		reqdet.ManualUnmarshalJSON(v)
+		//reqdet.Debug()
+		rdList = append(rdList, reqdet)
+	}
+	rdJson, _ := json.Marshal(rdList)
+	return rdJson
+}
+
+func ReadRequestDetailsToCache(client *sarama.Client, topic string, cacheDetails *cache.CacheTable) int {
+	log.Debug("Consuming from topic: ", topic)
+
+	lastn := int64(999999)
 	ch := make(chan *kafka.ConsumerData)
-	go kafka.ConsumeLastN(client, topic, 0, lastn, ch) // need to replace with a full scan (stop after all steps)
+	go kafka.ConsumeLastN(client, topic, 0, lastn, ch)
 
 	for msg := range ch {
-		log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request History message")
-
-		var arraymap []map[string]interface{}
-		err := json.Unmarshal(msg.Value, &arraymap)
-		Check(err)
-
-		for _, v := range arraymap {
-			rid, _ := strconv.ParseInt(requestid, 10, 32)
-			if getFieldDataInt32(v["rid"]) == int32(rid) {
-				reqdet := RequestDetails{}
-				reqdet.ManualUnmarshalJSON(v)
-				//reqdet.Debug()
-				rdList = append(rdList, reqdet)
-			}
-		}
+		log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request Details message")
+		cacheDetails.Add(msg.Key, cacheDefaultExpiration, msg.Value)
 		msg.Processed <- "success"
 	}
-	rhJson, _ := json.Marshal(rdList)
-	return rhJson
+	return cacheDetails.Count()
 }

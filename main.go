@@ -12,6 +12,7 @@ import (
 	. "github.com/larskluge/babl-qa/httpserver"
 	. "github.com/larskluge/babl-qa/kafkalogs"
 	"github.com/larskluge/babl-server/kafka"
+	cache "github.com/muesli/cache2go"
 )
 
 type server struct {
@@ -53,13 +54,17 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	chQAData := make(chan *QAJsonData)
 	chQAHistory := make(chan *RequestHistory)
 	chQADetails := make(chan *[]RequestDetails)
+	cacheDetails := cache.Cache("cacheDetails")
+
+	// cache details
+	ReadRequestDetailsToCache(s.kafkaClient, kafkaTopicDetails, cacheDetails)
 
 	go ListenToLogsQA(s.kafkaClient, kafkaTopicQA, chQAData)
 
 	// other higher level go rotines go here
 	go MonitorRequest(chQAData, chQAHistory, chQADetails)
 	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chQAHistory)
-	go SaveRequestDetails(s.kafkaProducer, kafkaTopicDetails, chQADetails)
+	go SaveRequestDetails(s.kafkaProducer, kafkaTopicDetails, chQADetails, cacheDetails)
 
 	// http callback function handler for Request History
 	// $ http 127.0.0.1:8888/api/request/history
@@ -74,8 +79,7 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	// http 127.0.0.1:8888/api/request/details/12345
 	HandlerRequestDetails := func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		//lastn := GetVarsBlockSize(r, 10)
-		rhJson := ReadRequestDetails(s.kafkaClient, kafkaTopicDetails, vars["requestid"])
+		rhJson := ReadRequestDetailsFromCache(vars["requestid"], cacheDetails)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(rhJson)
 	}
