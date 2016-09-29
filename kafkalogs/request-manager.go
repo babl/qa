@@ -2,7 +2,6 @@ package kafkalogs
 
 import (
 	"encoding/json"
-	"sort"
 	"strconv"
 	"time"
 
@@ -15,100 +14,14 @@ import (
 
 const cacheDefaultExpiration = 7 * 24 * time.Hour
 
-func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory {
-	//qadata.DebugJson()
-	data := rh
-	data.Timestamp = qadata.Timestamp
-	data.RequestId = qadata.RequestId
-	data.Duration = qadata.Duration
-	if data.Supervisor == "" && qadata.Supervisor != "" {
-		data.Supervisor = qadata.Supervisor
-	}
-	if data.Module == "" && qadata.Module != "" {
-		data.Module = qadata.Module
-	}
-	if data.ModuleVersion == "" && qadata.ModuleVersion != "" {
-		data.ModuleVersion = qadata.ModuleVersion
-	}
-	if qadata.Status != 0 {
-		data.Status = qadata.Status
-	}
-	data.Duration = qadata.Duration
-	data.Message = qadata.Message
-	//data.Debug()
-	return data
-}
-
-func updateRequestDetails(progress int, qadata *QAJsonData) RequestDetails {
-	//qadata.DebugJson()
-	data := RequestDetails{
-		RequestHistory: RequestHistory{
-			Timestamp:     qadata.Timestamp,
-			RequestId:     qadata.RequestId,
-			Message:       qadata.Message,
-			Module:        qadata.Module,
-			ModuleVersion: qadata.ModuleVersion,
-			Status:        qadata.Status,
-			Duration:      qadata.Duration,
-		},
-		Host:      qadata.Host,
-		Step:      progress,
-		Topic:     qadata.Topic,
-		Partition: qadata.Partition,
-		Offset:    qadata.Offset,
-	}
-	data.Duration = qadata.Duration
-	data.Supervisor = qadata.Supervisor
-	//data.Debug()
-	return data
-}
-
-func orderbystepRequestDetails(rdOrigin []RequestDetails) []RequestDetails {
-	rdAuxList := make(map[int]RequestDetails)
-	var rdResult []RequestDetails
-	var keys []int
-	for _, reqdet := range rdOrigin {
-		keys = append(keys, reqdet.Step)
-		rdAuxList[reqdet.Step] = reqdet
-	}
-	sort.Ints(keys)
-	for _, k := range keys {
-		rdResult = append(rdResult, rdAuxList[k])
-	}
-	return rdResult
-}
-
-func monitorRdTimeout(rdTL *map[int32]time.Time, timeout time.Duration, chQAData chan *QAJsonData, statuscode int32) {
-	for {
-		timer1 := time.NewTimer(time.Second)
-		<-timer1.C
-		for k, v := range *rdTL {
-			// verify if request was completed with success
-			if v == (time.Time{}) {
-				delete(*rdTL, k)
-			} else {
-				elapsed := time.Since(v)
-				if elapsed > timeout {
-					timeoutData := QAJsonData{}
-					timeoutData.RequestId = k
-					timeoutData.Duration = float64(elapsed) / float64(time.Millisecond)
-					timeoutData.Level = "error"
-					timeoutData.Status = statuscode
-					timeoutData.Timestamp = time.Now()
-					timeoutData.Message = "qa-service detected timeout!"
-					chQAData <- &timeoutData
-					delete(*rdTL, k)
-				}
-			}
-		}
-	}
-}
-
 func MonitorRequest(chQAData chan *QAJsonData,
 	chQAHist chan *RequestHistory, chQADetails chan *[]RequestDetails) {
+	mState := MessageState{}
+	mState.Initialize()
 	rhList := make(map[int32]RequestHistory)
 	rdList := make(map[int32][]RequestDetails)
 	rdTimeout := make(map[int32]time.Time)
+	rdType := make(map[int32]int)
 	timeout := 5 * time.Minute
 	const timeoutStatus int32 = 408
 
@@ -118,7 +31,18 @@ func MonitorRequest(chQAData chan *QAJsonData,
 
 	for qadata := range chQAData {
 		//qadata.DebugJson()
-		progress := CheckMessageProgress(qadata)
+
+		// verify message type, defaults to normal message and sets to Async in special case
+		if _, ok := rdType[qadata.RequestId]; !ok {
+			rdType[qadata.RequestId] = mState.GetMessageType(qadata)
+		} else if mState.GetMessageType(qadata) == QAMsgTypeAsync && rdType[qadata.RequestId] == QAMsgTypeDefault {
+			rdType[qadata.RequestId] = QAMsgTypeAsync
+			// Needs to adjust rdList[qadata.RequestId] messages with new step codes
+			rdList[qadata.RequestId] = updateRequestDetailsMsgType(QAMsgTypeAsync, rdList[qadata.RequestId])
+		}
+
+		// sets the message step
+		progress := mState.GetProgress(rdType[qadata.RequestId], qadata)
 
 		// update rdTimeout with now(): exclude previous timedout requests
 		if qadata.Status != timeoutStatus {
@@ -128,7 +52,9 @@ func MonitorRequest(chQAData chan *QAJsonData,
 		// RequestHistory: update log messages
 		rhList[qadata.RequestId] = updateRequestHistory(qadata, rhList[qadata.RequestId])
 		// RequestHistory: send data to channel if last message arrived (QAMsg6)
-		if progress == QAMsg6 || qadata.Status == timeoutStatus {
+		if progress == mState.LastQAMsg(rdType[qadata.RequestId]) ||
+			checkRequestDetailsLastMsg(rdType[qadata.RequestId], rdList[qadata.RequestId]) ||
+			qadata.Status == timeoutStatus {
 			data := rhList[qadata.RequestId]
 			chQAHist <- &data
 			delete(rhList, qadata.RequestId)
@@ -138,12 +64,15 @@ func MonitorRequest(chQAData chan *QAJsonData,
 		rdList[qadata.RequestId] = append(rdList[qadata.RequestId], updateRequestDetails(progress, qadata))
 		// RequestDetails: send data to channel if all 6 messages arrived (QAMsg1...QAMsg6)
 		// NOTE: this is required due to the async nature of log messages: e.g.:
-		// -> QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5
-		if len(rdList[qadata.RequestId]) >= 6 || qadata.Status == timeoutStatus {
+		// QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5
+		if checkRequestDetailsCompleteSequence(rdType[qadata.RequestId], rdList[qadata.RequestId]) ||
+			qadata.Status == timeoutStatus {
+
 			rdList[qadata.RequestId] = orderbystepRequestDetails(rdList[qadata.RequestId])
 			datadetails := rdList[qadata.RequestId]
 			chQADetails <- &datadetails
 			delete(rdList, qadata.RequestId)
+			delete(rdType, qadata.RequestId)
 			// resets rdTimeout, to be deleted by the monitor process
 			rdTimeout[qadata.RequestId] = time.Time{}
 		}
