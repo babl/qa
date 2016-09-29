@@ -33,7 +33,7 @@ function updateRequestHistory() {
         "<tbody id=\""+item.rid+"\" class=\"bodycontent\">"+
           "<tr class=\"trcontent\">"+
             "<th class=\"text-center\">"+
-              "<a href=\"javascript:void(0)\"><span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\" onclick=\"getRequestDetails("+item.rid+")\"></span></a>"+
+              "<a href=\"javascript:void(0)\"><span id=\"icon-"+item.rid+"\" class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\" onclick=\"getRequestDetails("+item.rid+")\"></span></a>"+
             "</th>"+
             "<td>"+item.time+"</td>"+
             "<td>"+item.rid+"</td>"+
@@ -55,6 +55,13 @@ function updateRequestHistory() {
 }
 
 function getRequestDetails(rid) {
+
+  if ($("#tbase-"+rid).length) {
+    $("#icon-"+rid).removeClass("glyphicon-minus").addClass("glyphicon-plus");
+    $("#tbase-"+rid).remove();
+    return;
+  }
+
   var urlRequestDetails = "/api/request/details/"+rid;
   $.getJSON(urlRequestDetails, {
     format: "json"
@@ -99,11 +106,10 @@ function getRequestDetails(rid) {
         "</tbody>";
     });
     details += "</table>";
-
+    $("#icon-"+rid).removeClass("glyphicon-plus").addClass("glyphicon-minus");
     $("#"+rid).append(
-      "    <tr class=\"trcontent\">"+
+      "    <tr id=\"tbase-"+rid+"\" class=\"trcontent\">"+
       "        <th class=\"text-center\">"+
-      "            <span class=\"glyphicon glyphicon-info-sign\" aria-hidden=\"true\"></span>"+
       "        </th>"+
       "        <td colspan=\"8\">"+details+"</td>"+
       "    </tr>")
