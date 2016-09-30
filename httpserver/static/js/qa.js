@@ -74,9 +74,8 @@ function getRequestDetails(rid) {
       "        <th>Step</th>"+
       "        <th>RequestId</th>"+
       "        <th>Host</th>"+
-      "        <th>Supervisor</th>"+
-      "        <th>Module</th>"+
-      "        <th>ModuleVer</th>"+
+      "        <th>Service</th>"+
+      "        <th>Version</th>"+
       "        <th>Message</th>"+
       "        <th>Topic</th>"+
       "        <th>Partition</th>"+
@@ -93,8 +92,7 @@ function getRequestDetails(rid) {
         "    <td>"+item.step+"</td>"+
         "    <td>"+item.rid+"</td>"+
         "    <td>"+item.host+"</td>"+
-        "    <td>"+item.supervisor+"</td>"+
-        "    <td>"+item.module+"</td>"+
+        "    <td>"+item.supervisor+item.module+"</td>"+
         "    <td>"+item.moduleversion+"</td>"+
         "    <td>"+item.message+"</td>"+
         "    <td>"+item.topic+"</td>"+
