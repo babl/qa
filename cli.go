@@ -1,15 +1,17 @@
 package main
 
-import (
-	"github.com/urfave/cli"
-)
+import "github.com/urfave/cli"
 
 func configureCli() (app *cli.App) {
 	app = cli.NewApp()
 	app.Usage = "Babl Quality Assurance"
 	app.Version = Version
 	app.Action = func(c *cli.Context) {
-		run(c.String("listen"), c.String("kafka-brokers"), c.GlobalBool("debug"))
+		kafkaBrokers := c.String("kafka-brokers")
+		if len(kafkaBrokers) == 0 {
+			kafkaBrokers = "queue.babl.sh:9092"
+		}
+		run(c.String("listen"), kafkaBrokers, c.GlobalBool("debug"))
 	}
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
@@ -20,7 +22,7 @@ func configureCli() (app *cli.App) {
 		cli.StringFlag{
 			Name:  "kafka-brokers, kb",
 			Usage: "Comma separated list of kafka brokers",
-			Value: "127.0.0.1:9092",
+			Value: "queue.babl.sh:9092",
 		},
 		cli.BoolFlag{
 			Name:   "debug",
