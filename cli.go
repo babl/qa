@@ -7,11 +7,15 @@ func configureCli() (app *cli.App) {
 	app.Usage = "Babl Quality Assurance"
 	app.Version = Version
 	app.Action = func(c *cli.Context) {
+		httpServerBind := c.String("listen")
 		kafkaBrokers := c.String("kafka-brokers")
+		if len(httpServerBind) == 0 {
+			httpServerBind = ":8888"
+		}
 		if len(kafkaBrokers) == 0 {
 			kafkaBrokers = "queue.babl.sh:9092"
 		}
-		run(c.String("listen"), kafkaBrokers, c.GlobalBool("debug"))
+		run(httpServerBind, kafkaBrokers, c.GlobalBool("debug"))
 	}
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
