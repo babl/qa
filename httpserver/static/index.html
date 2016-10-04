@@ -37,7 +37,7 @@
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <form class="navbar-form navbar-left">
                     <div class="form-group">
-                        <input id="datasize" type="text" class="form-control" placeholder="maxlines" size="4" value="100">&nbsp;
+                        <input id="datasize" type="text" class="form-control" placeholder="maxlines" size="4" value="20">&nbsp;
                         <!--<a href="javascript:void(0)"><span class="glyphicon glyphicon-refresh" aria-hidden="true" onclick="updateRequestHistory()"></span></a>-->
                         <button type="button" class="btn btn-default btn-sm" onclick="updateRequestHistory()">
                           <span class="glyphicon glyphicon-refresh"></span> Refresh
@@ -80,6 +80,27 @@
             </tbody>
 
         </table>
+    </div>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 id="titleModal" class="modal-title">Payload/Error Message</h4>
+                </div>
+                <div class="modal-body">
+                    <p id="messageModal">Some text in the modal.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->

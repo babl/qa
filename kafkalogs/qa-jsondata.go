@@ -20,6 +20,7 @@ type QAJsonData struct {
 	RequestId int32   `json:"rid"`
 	Key       string  `json:"key"`
 	Message   string  `json:"message"`
+	Error     string  `json:"error"`
 	Level     string  `json:"level"`
 	Status    int32   `json:"status"`
 	Stderr    string  `json:"stderr"`

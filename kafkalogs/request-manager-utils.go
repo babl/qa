@@ -25,6 +25,9 @@ func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory 
 	}
 	data.Duration = qadata.Duration
 	data.Message = qadata.Message
+	if data.Error == "" && qadata.Error != "" {
+		data.Error = qadata.Error
+	}
 	//data.Debug()
 	return data
 }
@@ -36,6 +39,7 @@ func updateRequestDetails(progress int, qadata *QAJsonData) RequestDetails {
 			Timestamp:     qadata.Timestamp,
 			RequestId:     qadata.RequestId,
 			Message:       qadata.Message,
+			Error:         qadata.Error,
 			Module:        qadata.Module,
 			ModuleVersion: qadata.ModuleVersion,
 			Status:        qadata.Status,
@@ -146,6 +150,7 @@ func monitorRdTimeout(rdTL *map[int32]time.Time, timeout time.Duration, chQAData
 					timeoutData.Status = statuscode
 					timeoutData.Timestamp = time.Now()
 					timeoutData.Message = "qa-service detected timeout!"
+					timeoutData.Error = "QA-Service: Internal timer detected timeout!"
 					chQAData <- &timeoutData
 					delete(*rdTL, k)
 				}

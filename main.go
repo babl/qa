@@ -83,5 +83,13 @@ func run(listen, kafkaBrokers string, dbg bool) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(rhJson)
 	}
-	StartHttpServer(listen, HandlerRequestHistory, HandlerRequestDetails)
+	// http callback function handler for Request Payload
+	// http 127.0.0.1:8888/api/request/payload/babl.babl.Events.IO/4/3460
+	HandlerRequestPayload := func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		rhJson := ReadRequestPayload(s.kafkaClient, vars["topic"], vars["partition"], vars["offset"])
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Write(rhJson)
+	}
+	StartHttpServer(listen, HandlerRequestHistory, HandlerRequestDetails, HandlerRequestPayload)
 }

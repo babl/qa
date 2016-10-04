@@ -26,7 +26,9 @@ func GetVarsBlockSize(r *http.Request, defaultvalue int64) int64 {
 
 func StartHttpServer(listen string,
 	HandlerRequestHistory func(w http.ResponseWriter, r *http.Request),
-	HandlerRequestDetails func(w http.ResponseWriter, r *http.Request)) {
+	HandlerRequestDetails func(w http.ResponseWriter, r *http.Request),
+	HandlerRequestPayload func(w http.ResponseWriter, r *http.Request)) {
+
 	pwd, err := os.Getwd()
 	Check(err)
 	dir := pwd + "/httpserver/static"
@@ -38,6 +40,7 @@ func StartHttpServer(listen string,
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET").Queries("blocksize", "{blocksize}")
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET")
 	r.HandleFunc("/api/request/details/{requestid:[0-9]+}", HandlerRequestDetails).Methods("GET")
+	r.HandleFunc("/api/request/payload/{topic:.*}/{partition:[0-9]+}/{offset:[0-9]+}", HandlerRequestPayload).Methods("GET")
 
 	// Static files and assets
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(dir))))

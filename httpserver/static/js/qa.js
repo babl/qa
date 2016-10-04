@@ -4,6 +4,31 @@
   });
 })();
 
+function getMessage(topic, partition, offset) {
+  console.log("getMessage => ", topic, partition, offset)
+  //alert(topic + '|' + partition + '|' + offset)
+  var urlRequestDetails = "/api/request/payload/"+topic+"/"+partition+"/"+offset;
+  $.ajax({
+     url: urlRequestDetails,
+     contentType: "application/octet-stream; charset=utf-8",
+     type: 'GET',
+     success: function(data) {
+        $("#titleModal").text("Payload Message")
+        $("#messageModal").text(data);
+        $("#myModal").modal();
+     },
+     error: function(data) {
+         console.log("error: ", data);
+     }
+ });
+}
+
+function getError(err) {
+  $("#titleModal").text("Error Message")
+  $("#messageModal").text(err);
+  $("#myModal").modal();
+}
+
 function updateRequestHistory() {
   var status_green = "#88CF85"
   var status_red = "#F87070"
@@ -80,12 +105,21 @@ function getRequestDetails(rid) {
       "        <th>Topic</th>"+
       "        <th>Partition</th>"+
       "        <th>Offset</th>"+
+      "        <th>Msg</th>"+
+      "        <th>Error</th>"+
       "        <th>Duration [ms]</th>"+
       "        <th>Status</th>"+
       "        </tr>"+
       "    </thead>";
 
     $.each(data, function(i, item) {
+      var msgHidden = 'hidden'
+      var errHidden = 'hidden'
+      if (item.topic.length > 0 && item.offset > 0)
+        msgHidden = ''
+      if (item.status != 200 && item.status != 0 && item.error.length > 0)
+        errHidden = ''
+
       details +=
         "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent\">"+
         "  <tr class=\"trcontent\">"+
@@ -98,6 +132,12 @@ function getRequestDetails(rid) {
         "    <td>"+item.topic+"</td>"+
         "    <td>"+item.partition+"</td>"+
         "    <td>"+item.offset+"</td>"+
+        "    <td><button type=\"button\" class=\""+msgHidden+" btn btn-default btn-sm\" onclick=\"getMessage('"+item.topic+"',"+item.partition+","+item.offset+")\">"+
+        "        <span class=\"glyphicon glyphicon-file\"></span></button>"+
+        "    </td>"+
+        "    <td><button type=\"button\" class=\""+errHidden+" btn btn-default btn-sm\" onclick=\"getError('"+item.error+"')\">"+
+        "        <span class=\"glyphicon glyphicon-exclamation-sign\"></span></button>"+
+        "    </td>"+
         "    <td>"+item.duration_ms+"</td>"+
         "    <td>"+item.status+"</td>"+
         "  </tr>"+

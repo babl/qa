@@ -158,3 +158,11 @@ func ReadRequestDetailsToCache(client *sarama.Client, topic string, cacheDetails
 	}
 	return cacheDetails.Count()
 }
+
+func ReadRequestPayload(client *sarama.Client, topic string, partition string, offset string) []byte {
+	log.Debug("Consuming from topic/partition/offset: ", topic, partition, offset)
+	partitionInt, _ := strconv.ParseInt(partition, 10, 64)
+	offsetInt, _ := strconv.ParseInt(offset, 10, 64)
+	result := kafka.ConsumeTopicPartitionOffset(client, topic, int32(partitionInt), offsetInt)
+	return result.Value
+}
