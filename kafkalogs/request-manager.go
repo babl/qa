@@ -147,6 +147,12 @@ func ReadRequestDetailsFromCache(requestid string, cacheDetails *cache.CacheTabl
 func ReadRequestDetailsToCache(client *sarama.Client, topic string, cacheDetails *cache.CacheTable) int {
 	log.Debug("Consuming from topic: ", topic)
 
+	_, to := kafka.ConsumeGetOffsetValues(client, topic, 0)
+	if to == 0 {
+		log.Debug("Topic does not contain data to consume: ", topic)
+		return 0
+	}
+
 	lastn := int64(999999)
 	ch := make(chan *kafka.ConsumerData)
 	go kafka.ConsumeLastN(client, topic, 0, lastn, ch)
