@@ -119,7 +119,9 @@ func checkRequestDetailsCompleteSequence(msgType int, rdOrigin []RequestDetails)
 		if reqdet.Step == QAMsgTimeout {
 			return false
 		}
-		indexArray[reqdet.Step-1] = 1
+		if reqdet.Step >= mState.FirstQAMsg(msgType) && reqdet.Step <= mState.LastQAMsg(msgType) {
+			indexArray[reqdet.Step-1] = 1
+		}
 	}
 	// verify if all the array contains 1 in all elements
 	result := true
