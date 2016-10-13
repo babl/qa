@@ -64,7 +64,6 @@ function updateRequestHistory() {
             "<td>"+item.rid+"</td>"+
             "<td>"+item.supervisor+"</td>"+
             "<td>"+item.module+"</td>"+
-            "<td>"+item.moduleversion+"</td>"+
             "<td><span style=\"color:"+duration_color+"\">"+item.duration_ms+"</span></td>"+
             "<td bgcolor=\""+status_color+"\">"+item.status+"</td>"+
           "</tr>"+
@@ -100,7 +99,6 @@ function getRequestDetails(rid) {
       "        <th>RequestId</th>"+
       "        <th>Host</th>"+
       "        <th>Service</th>"+
-      "        <th>Version</th>"+
       "        <th>Message</th>"+
       "        <th>Topic</th>"+
       "        <th>Partition</th>"+
@@ -127,7 +125,6 @@ function getRequestDetails(rid) {
         "    <td>"+item.rid+"</td>"+
         "    <td>"+item.host+"</td>"+
         "    <td>"+item.supervisor+item.module+"</td>"+
-        "    <td>"+item.moduleversion+"</td>"+
         "    <td>"+item.message+"</td>"+
         "    <td>"+item.topic+"</td>"+
         "    <td>"+item.partition+"</td>"+
