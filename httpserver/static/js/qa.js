@@ -113,7 +113,7 @@ function getRequestDetails(rid) {
     $.each(data, function(i, item) {
       var msgHidden = 'hidden'
       var errHidden = 'hidden'
-      if (item.topic.length > 0 && item.offset > 0)
+      if (item.topic.length > 0)
         msgHidden = ''
       if (item.status != 200 && item.status != 0 && item.error.length > 0)
         errHidden = ''
