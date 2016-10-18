@@ -36,11 +36,25 @@ func StartHttpServer(listen string,
 	//fmt.Println("HttpServer: ", dir)
 	r := mux.NewRouter()
 
+	//websockets
+	hub := newHub()
+	go hub.run()
+
 	// REST API
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET").Queries("blocksize", "{blocksize}")
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET")
 	r.HandleFunc("/api/request/details/{requestid:[0-9]+}", HandlerRequestDetails).Methods("GET")
 	r.HandleFunc("/api/request/payload/{topic:.*}/{partition:[0-9]+}/{offset:[0-9]+}", HandlerRequestPayload).Methods("GET")
+	// websockets
+	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		serveWs(hub, w, r)
+	})
+
+	r.HandleFunc("/demo", func(w http.ResponseWriter, r *http.Request) {
+		hub.broadcast <- []byte("Hello World!!!")
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("demo!"))
+	})
 
 	// Static files and assets
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir(dir))))
