@@ -31,6 +31,8 @@ func main() {
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetLevel(log.WarnLevel)
 
+	log.Warn("App START")
+
 	app := configureCli()
 	app.Run(os.Args)
 }
@@ -41,6 +43,8 @@ func run(listen, kafkaBrokers string, dbg bool) {
 		log.SetLevel(log.DebugLevel)
 	}
 	s := server{}
+	// websockets
+	wsHub := NewHub()
 
 	const kafkaTopicQA = "logs.qa"
 	const kafkaTopicHistory = "logs.history"
@@ -52,19 +56,29 @@ func run(listen, kafkaBrokers string, dbg bool) {
 	defer (*s.kafkaProducer).Close()
 
 	chQAData := make(chan *QAJsonData)
-	chQAHistory := make(chan *RequestHistory)
-	chQADetails := make(chan *[]RequestDetails)
+	chHistory := make(chan *RequestHistory)
+	chWSHistory := make(chan *[]byte)
+	chDetails := make(chan *[]RequestDetails)
 	cacheDetails := cache.Cache("cacheDetails")
 
 	// cache details
+	log.Warn("App Load Cache ...")
 	ReadRequestDetailsToCache(s.kafkaClient, kafkaTopicDetails, cacheDetails)
+	log.Warn("App Completed Load Cache")
 
+	//websockets
+	log.Warn("App Run Websockets Hub")
+	go wsHub.Run()
+
+	log.Warn("App Run ListenToLogsQA")
 	go ListenToLogsQA(s.kafkaClient, kafkaTopicQA, chQAData)
 
 	// other higher level go rotines go here
-	go MonitorRequest(chQAData, chQAHistory, chQADetails)
-	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chQAHistory)
-	go SaveRequestDetails(s.kafkaProducer, kafkaTopicDetails, chQADetails, cacheDetails)
+	log.Warn("App Save/Broadcast Data")
+	go MonitorRequest(chQAData, chHistory, chWSHistory, chDetails)
+	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chHistory)
+	go WSBroadcastRequestHistory(wsHub, chWSHistory)
+	go SaveRequestDetails(s.kafkaProducer, kafkaTopicDetails, chDetails, cacheDetails)
 
 	// http callback function handler for Request History
 	// $ http 127.0.0.1:8888/api/request/history
@@ -91,5 +105,6 @@ func run(listen, kafkaBrokers string, dbg bool) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Write(rhJson)
 	}
-	StartHttpServer(listen, HandlerRequestHistory, HandlerRequestDetails, HandlerRequestPayload)
+	log.Warn("App Start WebServer")
+	StartHttpServer(listen, wsHub, HandlerRequestHistory, HandlerRequestDetails, HandlerRequestPayload)
 }

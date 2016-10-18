@@ -24,7 +24,7 @@ func GetVarsBlockSize(r *http.Request, defaultvalue int64) int64 {
 	return result
 }
 
-func StartHttpServer(listen string,
+func StartHttpServer(listen string, wsHub *Hub,
 	HandlerRequestHistory func(w http.ResponseWriter, r *http.Request),
 	HandlerRequestDetails func(w http.ResponseWriter, r *http.Request),
 	HandlerRequestPayload func(w http.ResponseWriter, r *http.Request)) {
@@ -36,10 +36,6 @@ func StartHttpServer(listen string,
 	//fmt.Println("HttpServer: ", dir)
 	r := mux.NewRouter()
 
-	//websockets
-	hub := newHub()
-	go hub.run()
-
 	// REST API
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET").Queries("blocksize", "{blocksize}")
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET")
@@ -47,11 +43,11 @@ func StartHttpServer(listen string,
 	r.HandleFunc("/api/request/payload/{topic:.*}/{partition:[0-9]+}/{offset:[0-9]+}", HandlerRequestPayload).Methods("GET")
 	// websockets
 	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		serveWs(hub, w, r)
+		serveWs(wsHub, w, r)
 	})
 
 	r.HandleFunc("/demo", func(w http.ResponseWriter, r *http.Request) {
-		hub.broadcast <- []byte("Hello World!!!")
+		wsHub.Broadcast <- []byte("Hello World!!!")
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("demo!"))
 	})

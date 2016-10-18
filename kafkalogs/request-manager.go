@@ -2,11 +2,13 @@ package kafkalogs
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
+	. "github.com/larskluge/babl-qa/httpserver"
 	"github.com/larskluge/babl-server/kafka"
 	. "github.com/larskluge/babl-server/utils"
 	cache "github.com/muesli/cache2go"
@@ -15,14 +17,14 @@ import (
 const cacheDefaultExpiration = 7 * 24 * time.Hour
 
 func MonitorRequest(chQAData chan *QAJsonData,
-	chQAHist chan *RequestHistory, chQADetails chan *[]RequestDetails) {
+	chHist chan *RequestHistory, chWSHist chan *[]byte, chDetails chan *[]RequestDetails) {
 	mState := MessageState{}
 	mState.Initialize()
 	rhList := make(map[int32]RequestHistory)
 	rdList := make(map[int32][]RequestDetails)
 	rdTimeout := make(map[int32]time.Time)
 	rdType := make(map[int32]int)
-	timeout := 5 * time.Minute
+	timeout := 1 * time.Minute
 	const timeoutStatus int32 = 408
 
 	// monitor rdTimeout list to check if request takes longer than timeout
@@ -57,7 +59,7 @@ func MonitorRequest(chQAData chan *QAJsonData,
 				checkRequestDetailsLastMsg(rdType[qadata.RequestId], rdList[qadata.RequestId]) ||
 				qadata.Status == timeoutStatus {
 				data := rhList[qadata.RequestId]
-				chQAHist <- &data
+				chHist <- &data
 				delete(rhList, qadata.RequestId)
 			} */
 
@@ -70,13 +72,15 @@ func MonitorRequest(chQAData chan *QAJsonData,
 			qadata.Status == timeoutStatus {
 			// logs.history
 			data := rhList[qadata.RequestId]
-			chQAHist <- &data
+			chHist <- &data
+			rhJson, _ := json.Marshal(data)
+			chWSHist <- &rhJson
 			delete(rhList, qadata.RequestId)
 
 			// logs.details
 			rdList[qadata.RequestId] = orderbystepRequestDetails(rdList[qadata.RequestId])
 			datadetails := rdList[qadata.RequestId]
-			chQADetails <- &datadetails
+			chDetails <- &datadetails
 			delete(rdList, qadata.RequestId)
 			delete(rdType, qadata.RequestId)
 			// resets rdTimeout, to be deleted by the monitor process
@@ -85,11 +89,20 @@ func MonitorRequest(chQAData chan *QAJsonData,
 	}
 }
 
-func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chQAHist chan *RequestHistory) {
-	for reqhist := range chQAHist {
+func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chHist chan *RequestHistory) {
+	for reqhist := range chHist {
 		rhJson, _ := json.Marshal(reqhist)
 		//fmt.Printf("%s\n", rhJson)
 		kafka.SendMessage(producer, strconv.FormatInt(int64(reqhist.RequestId), 10), topic, &rhJson)
+	}
+}
+
+func WSBroadcastRequestHistory(wsHub *Hub, chWSHist chan *[]byte) {
+	for rhJson := range chWSHist {
+		fmt.Println("------------------------------")
+		fmt.Printf("%s\n", *rhJson)
+		wsHub.Broadcast <- *rhJson
+		fmt.Println("------------------------------")
 	}
 }
 
@@ -100,7 +113,6 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 	go kafka.ConsumeLastN(client, topic, 0, lastn, ch)
 	for msg := range ch {
 		log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request History message")
-
 		reqhist := RequestHistory{}
 		reqhist.UnmarshalJSON(msg.Value)
 		//reqhist.Debug()
@@ -111,9 +123,9 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 	return rhJson
 }
 
-func SaveRequestDetails(producer *sarama.SyncProducer, topic string, chQADetails chan *[]RequestDetails,
+func SaveRequestDetails(producer *sarama.SyncProducer, topic string, chDetails chan *[]RequestDetails,
 	cacheDetails *cache.CacheTable) {
-	for reqdetails := range chQADetails {
+	for reqdetails := range chDetails {
 		rid := (*reqdetails)[0].RequestId
 		rhJson, _ := json.Marshal(reqdetails)
 		//fmt.Printf("%s\n", rhJson)
@@ -159,14 +171,19 @@ func ReadRequestDetailsToCache(client *sarama.Client, topic string, cacheDetails
 		return 0
 	}
 
-	lastn := int64(999999)
+	lastn := int64(10000)
 	ch := make(chan *kafka.ConsumerData)
 	go kafka.ConsumeLastN(client, topic, 0, lastn, ch)
 
+	counter := 0
 	for msg := range ch {
 		log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request Details message")
 		cacheDetails.Add(msg.Key, cacheDefaultExpiration, msg.Value)
 		msg.Processed <- "success"
+		if counter%100 == 0 {
+			log.Warn("Cache Loading: ", counter)
+		}
+		counter++
 	}
 	return cacheDetails.Count()
 }

@@ -42,6 +42,9 @@
                         <button type="button" class="btn btn-default btn-sm" onclick="updateRequestHistory()">
                           <span class="glyphicon glyphicon-refresh"></span> Refresh
                         </button>
+                        <button id="wsButton" type="button" class="btn btn-default btn-sm" onclick="connectWebsocket()">
+                          <span class="glyphicon glyphicon-play-circle"></span> Live Update
+                        </button>
                     </div>
                 </form>
             </div>
@@ -53,7 +56,7 @@
     <!-- Table -->
     <div class="container-fluid">
         <table id="tableData" class="table table-condensed table-bordered table-striped table-hover">
-            <thead>
+            <thead id="tableDataHeader">
                 <tr>
                     <th class="text-center"></th>
                     <th>Time</th>
