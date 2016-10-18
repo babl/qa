@@ -52,13 +52,14 @@ func MonitorRequest(chQAData chan *QAJsonData,
 		// RequestHistory: update log messages
 		rhList[qadata.RequestId] = updateRequestHistory(qadata, rhList[qadata.RequestId])
 		// RequestHistory: send data to channel if last message arrived (QAMsg6)
-		if progress == mState.LastQAMsg(rdType[qadata.RequestId]) ||
-			checkRequestDetailsLastMsg(rdType[qadata.RequestId], rdList[qadata.RequestId]) ||
-			qadata.Status == timeoutStatus {
-			data := rhList[qadata.RequestId]
-			chQAHist <- &data
-			delete(rhList, qadata.RequestId)
-		}
+		/*
+			if progress == mState.LastQAMsg(rdType[qadata.RequestId]) ||
+				checkRequestDetailsLastMsg(rdType[qadata.RequestId], rdList[qadata.RequestId]) ||
+				qadata.Status == timeoutStatus {
+				data := rhList[qadata.RequestId]
+				chQAHist <- &data
+				delete(rhList, qadata.RequestId)
+			} */
 
 		// RequestDetails log messages
 		rdList[qadata.RequestId] = append(rdList[qadata.RequestId], updateRequestDetails(progress, qadata))
@@ -67,7 +68,12 @@ func MonitorRequest(chQAData chan *QAJsonData,
 		// QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5
 		if checkRequestDetailsCompleteSequence(rdType[qadata.RequestId], rdList[qadata.RequestId]) ||
 			qadata.Status == timeoutStatus {
+			// logs.history
+			data := rhList[qadata.RequestId]
+			chQAHist <- &data
+			delete(rhList, qadata.RequestId)
 
+			// logs.details
 			rdList[qadata.RequestId] = orderbystepRequestDetails(rdList[qadata.RequestId])
 			datadetails := rdList[qadata.RequestId]
 			chQADetails <- &datadetails

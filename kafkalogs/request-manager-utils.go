@@ -6,11 +6,9 @@ import (
 )
 
 func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory {
-	//qadata.DebugJson()
 	data := rh
 	data.Timestamp = qadata.Timestamp
 	data.RequestId = qadata.RequestId
-	data.Duration = qadata.Duration
 	if data.Supervisor == "" && qadata.Supervisor != "" {
 		data.Supervisor = qadata.Supervisor
 	}
@@ -23,7 +21,9 @@ func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory 
 	if qadata.Status != 0 {
 		data.Status = qadata.Status
 	}
-	data.Duration = qadata.Duration
+	if data.Duration <= qadata.Duration {
+		data.Duration = qadata.Duration
+	}
 	data.Message = qadata.Message
 	if data.Error == "" && qadata.Error != "" {
 		data.Error = qadata.Error
