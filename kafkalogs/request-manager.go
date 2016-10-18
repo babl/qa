@@ -2,7 +2,6 @@ package kafkalogs
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -99,10 +98,8 @@ func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chHist chan
 
 func WSBroadcastRequestHistory(wsHub *Hub, chWSHist chan *[]byte) {
 	for rhJson := range chWSHist {
-		fmt.Println("------------------------------")
-		fmt.Printf("%s\n", *rhJson)
+		//fmt.Printf("%s\n", *rhJson)
 		wsHub.Broadcast <- *rhJson
-		fmt.Println("------------------------------")
 	}
 }
 
