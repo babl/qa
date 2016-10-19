@@ -177,7 +177,7 @@ func ReadRequestDetailsToCache(client *sarama.Client, topic string, cacheDetails
 		log.WithFields(log.Fields{"key": msg.Key}).Debug("Read Request Details message")
 		cacheDetails.Add(msg.Key, cacheDefaultExpiration, msg.Value)
 		msg.Processed <- "success"
-		if counter%100 == 0 {
+		if counter%1000 == 0 {
 			log.Warn("Cache Loading: ", counter)
 		}
 		counter++

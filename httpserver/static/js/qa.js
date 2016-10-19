@@ -138,7 +138,7 @@ function getRequestDetails(rid) {
       var errHidden = 'hidden'
       if (item.topic.length > 0 && (item.partition > 0 || item.offset > 0))
         msgHidden = ''
-      if (item.status != 200 && item.status != 0 && item.error.length > 0)
+      if (item.status != 200 && item.status != 0 && item.message_error.length > 0)
         errHidden = ''
 
       details +=
@@ -155,7 +155,7 @@ function getRequestDetails(rid) {
         "    <td><button type=\"button\" class=\""+msgHidden+" btn btn-default btn-sm\" onclick=\"getMessage('"+item.topic+"',"+item.partition+","+item.offset+")\">"+
         "        <span class=\"glyphicon glyphicon-file\"></span></button>"+
         "    </td>"+
-        "    <td><button type=\"button\" class=\""+errHidden+" btn btn-default btn-sm\" onclick=\"getError('"+item.error+"')\">"+
+        "    <td><button type=\"button\" class=\""+errHidden+" btn btn-default btn-sm\" onclick=\"getError('"+item.message_error+"')\">"+
         "        <span class=\"glyphicon glyphicon-exclamation-sign\"></span></button>"+
         "    </td>"+
         "    <td>"+item.duration_ms+"</td>"+

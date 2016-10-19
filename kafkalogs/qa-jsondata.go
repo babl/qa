@@ -20,7 +20,7 @@ type QAJsonData struct {
 	RequestId int32   `json:"rid"`
 	Key       string  `json:"key"`
 	Message   string  `json:"message"`
-	Error     string  `json:"error"`
+	Error     string  `json:"message_error"`
 	Level     string  `json:"level"`
 	Status    int32   `json:"status"`
 	Stderr    string  `json:"stderr"`
@@ -47,6 +47,7 @@ func (qadata *QAJsonData) UnmarshalJSON(data []byte) error {
 
 	qadata.Key = getFieldDataString(qadata.Z["key"])
 	qadata.Message = getFieldDataString(qadata.Z["message"])
+	qadata.Error = getFieldDataString(qadata.Z["message_error"])
 	qadata.Level = getFieldDataString(qadata.Z["level"])
 	qadata.Status = getFieldDataInt32(qadata.Z["status"])
 	qadata.Stderr = getFieldDataString(qadata.Z["stderr"])

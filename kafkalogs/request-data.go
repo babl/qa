@@ -11,7 +11,7 @@ type RequestHistory struct {
 	Timestamp     time.Time `json:"time"`
 	RequestId     int32     `json:"rid"`
 	Message       string    `json:"message"`
-	Error         string    `json:"error"`
+	Error         string    `json:"message_error"`
 	Supervisor    string    `json:"supervisor"`
 	Module        string    `json:"module"`
 	ModuleVersion string    `json:"moduleversion"`
@@ -38,7 +38,7 @@ func (reqhist *RequestHistory) UnmarshalJSON(data []byte) error {
 	}
 	reqhist.RequestId = getFieldDataInt32(Z["rid"])
 	reqhist.Message = getFieldDataString(Z["message"])
-	reqhist.Error = getFieldDataString(Z["error"])
+	reqhist.Error = getFieldDataString(Z["message_error"])
 	reqhist.Supervisor = getFieldDataString(Z["supervisor"])
 	reqhist.Module = getFieldDataString(Z["module"])
 	reqhist.ModuleVersion = getFieldDataString(Z["moduleversion"])
@@ -60,7 +60,7 @@ func (reqdet *RequestDetails) ManualUnmarshalJSON(Z map[string]interface{}) erro
 	}
 	reqdet.RequestId = getFieldDataInt32(Z["rid"])
 	reqdet.Message = getFieldDataString(Z["message"])
-	reqdet.Error = getFieldDataString(Z["error"])
+	reqdet.Error = getFieldDataString(Z["message_error"])
 	reqdet.Supervisor = getFieldDataString(Z["supervisor"])
 	reqdet.Module = getFieldDataString(Z["module"])
 	reqdet.ModuleVersion = getFieldDataString(Z["moduleversion"])
