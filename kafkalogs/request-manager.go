@@ -23,7 +23,7 @@ func MonitorRequest(chQAData chan *QAJsonData,
 	rdList := make(map[int32][]RequestDetails)
 	rdTimeout := make(map[int32]time.Time)
 	rdType := make(map[int32]int)
-	timeout := 5 * time.Minute
+	timeout := 6 * time.Minute
 	const timeoutStatus int32 = 408
 
 	// monitor rdTimeout list to check if request takes longer than timeout
@@ -71,6 +71,15 @@ func MonitorRequest(chQAData chan *QAJsonData,
 			qadata.Status == timeoutStatus {
 			// logs.history
 			data := rhList[qadata.RequestId]
+			// checks if RequestHistory MODULE field is empty, if so gets module name from supvervisor2 topic
+			/*
+				if len(data.Module) == 0 {
+					detailsList := orderbystepRequestDetails(rdList[qadata.RequestId])
+					re := regexp.MustCompile(`([0-9a-zA-Z]+)`)
+					result := re.FindAllString(detailsList[0].Topic, -1)
+					data.Module = result[1] + "/" + result[2]
+				}
+			*/
 			chHist <- &data
 			rhJson, _ := json.Marshal(data)
 			chWSHist <- &rhJson
