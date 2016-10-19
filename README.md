@@ -48,3 +48,9 @@ Launch 6 terminal sessions in `$GOPATH/src/github.com/larskluge/babl-qa/DEVENV` 
 	- [X] Create a REST api module
 	- [X] Create internal request timeout monitor (in some conditions supervisor2 does not 	timeout)
 	- [ ] Create an internal request monitor that triggers an event error when it's only receiving messages from the supervisor2 or only from babl-server
+	- [X] Add websockets support for UI Live Update
+	- [ ] Add Dashboard to count Success/Errors per minute and per hour rates
+	- [ ] Add Histogram graph (time vs requests, similar to logmatic top view)
+	- [ ] Add flag to adjust qa-service internal timeout
+	- [ ] Add flag to adjust cache timeout
+	- [ ] Add flag to silence kafka write (useful to test locally)
