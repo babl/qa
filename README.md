@@ -54,3 +54,4 @@ Launch 6 terminal sessions in `$GOPATH/src/github.com/larskluge/babl-qa/DEVENV` 
 	- [ ] Add flag to adjust qa-service internal timeout
 	- [ ] Add flag to adjust cache timeout
 	- [ ] Add flag to silence kafka write (useful to test locally)
+	- [ ] Create a go routine to parse `logs.raw` data into `logs.qa` (removing logstash dependency)
