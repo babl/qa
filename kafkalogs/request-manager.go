@@ -23,7 +23,7 @@ func MonitorRequest(chQAData chan *QAJsonData,
 	rdList := make(map[int32][]RequestDetails)
 	rdTimeout := make(map[int32]time.Time)
 	rdType := make(map[int32]int)
-	timeout := 1 * time.Minute
+	timeout := 5 * time.Minute
 	const timeoutStatus int32 = 408
 
 	// monitor rdTimeout list to check if request takes longer than timeout
