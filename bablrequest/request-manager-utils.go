@@ -63,9 +63,8 @@ func updateRequestDetailsMsgType(msgType int, rdOrigin []RequestDetails) []Reque
 	var keys []int
 	mState := MessageState{}
 	mState.Initialize()
-
 	for _, reqdet := range rdOrigin {
-		reqdet.Debug()
+		//reqdet.Debug()
 		// adjust step for the new msgType
 		reqdet.Step = mState.GetProgressFromString(msgType, reqdet.Message)
 		keys = append(keys, reqdet.Step)
@@ -82,8 +81,20 @@ func orderbystepRequestDetails(rdOrigin []RequestDetails) []RequestDetails {
 	rdAuxList := make(map[int]RequestDetails)
 	var rdResult []RequestDetails
 	var keys []int
+
+	// adjust optional messages Step == 0 to sequencial step > 100
+	var optionalMessageStep = int(100)
+	for i, reqdet := range rdOrigin {
+		if reqdet.Step == 0 {
+			rdOrigin[i].Step = optionalMessageStep
+			optionalMessageStep++
+		}
+	}
+
 	for _, reqdet := range rdOrigin {
-		keys = append(keys, reqdet.Step)
+		if reqdet.Step > 0 {
+			keys = append(keys, reqdet.Step)
+		}
 		rdAuxList[reqdet.Step] = reqdet
 	}
 	sort.Ints(keys)

@@ -142,6 +142,15 @@ function getRequestDetails(rid) {
       if (item.status != 200 && item.status != 0 && item.message_error.length > 0)
         errHidden = ''
 
+      // optional messages
+      if (item.step === 100) {
+        details +=
+          "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent\">"+
+          "  <tr class=\"trcontent\">"+
+          "    <td colspan=\"12\" class=\"text-center\">additional messages</td>"+
+          "  </tr>"+
+          "</tbody>";
+      }
       details +=
         "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent\">"+
         "  <tr class=\"trcontent\">"+
