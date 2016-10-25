@@ -45,7 +45,7 @@ function tableDataAddItem(item) {
   var duration_color;
   if (item.duration_ms < 1000) {
     duration_color = duration_green;
-  } else if (item.duration_ms >= 1000 && item.duration_ms < 1500) {
+  } else if (item.duration_ms >= 1000 && item.duration_ms < 2000) {
     duration_color = duration_orange;
   } else {
     duration_color = duration_red;
@@ -60,7 +60,7 @@ function tableDataAddItem(item) {
         "<td>"+item.rid+"</td>"+
         "<td>"+item.supervisor+"</td>"+
         "<td>"+item.module+"</td>"+
-        "<td><span style=\"color:"+duration_color+"\">"+item.duration_ms+"</span></td>"+
+        "<td><span style=\"color:"+duration_color+"\">"+parseTime(item.duration_ms)+"</span></td>"+
         "<td bgcolor=\""+status_color+"\">"+item.status+"</td>"+
       "</tr>"+
     "</tbody>");
@@ -99,6 +99,22 @@ function updateRequestHistory() {
     });
     tableDataAppendCount(count);
   });
+}
+//from miliseconds to seconds
+function parseTime(duration_ms){
+  var time;
+
+  if (duration_ms < 1000) {
+    time = Number(parseFloat(duration_ms)).toFixed(0)+"ms"
+  } else if (duration_ms >= 1000 && duration_ms < 2000) {
+    time = Number(parseFloat(1703.433039)/1000).toFixed(2)+"s"
+  } else {
+    var sec = parseFloat(duration_ms)/1000;
+    var min = Math.floor(sec/60)
+    var sec = Math.floor(sec % 60)
+    time = min+"m "+sec+"s"
+  }
+  return time
 }
 
 function getRequestDetails(rid) {
@@ -168,7 +184,7 @@ function getRequestDetails(rid) {
         "    <td><button type=\"button\" class=\""+errHidden+" btn btn-default btn-sm\" onclick=\"getError('"+item.message_error+"')\">"+
         "        <span class=\"glyphicon glyphicon-exclamation-sign\"></span></button>"+
         "    </td>"+
-        "    <td>"+item.duration_ms+"</td>"+
+        "    <td>"+parseTime(item.duration_ms)+"</td>"+
         "    <td>"+item.status+"</td>"+
         "  </tr>"+
         "</tbody>";
