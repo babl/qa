@@ -39,7 +39,7 @@ func StartHttpServer(listen string, wsHub *Hub,
 	// REST API
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET").Queries("blocksize", "{blocksize}")
 	r.HandleFunc("/api/request/history", HandlerRequestHistory).Methods("GET")
-	r.HandleFunc("/api/request/details/{requestid:[0-9]+}", HandlerRequestDetails).Methods("GET")
+	r.HandleFunc("/api/request/details/{requestid:.*}", HandlerRequestDetails).Methods("GET")
 	r.HandleFunc("/api/request/payload/{topic:.*}/{partition:[0-9]+}/{offset:[0-9]+}", HandlerRequestPayload).Methods("GET")
 	// websockets
 	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {

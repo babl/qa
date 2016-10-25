@@ -19,10 +19,10 @@ func MonitorRequest(chQAData chan *QAJsonData,
 	chHist chan *RequestHistory, chWSHist chan *[]byte, chDetails chan *[]RequestDetails) {
 	mState := MessageState{}
 	mState.Initialize()
-	rhList := make(map[int32]RequestHistory)
-	rdList := make(map[int32][]RequestDetails)
-	rdTimeout := make(map[int32]time.Time)
-	rdType := make(map[int32]int)
+	rhList := make(map[string]RequestHistory)
+	rdList := make(map[string][]RequestDetails)
+	rdTimeout := make(map[string]time.Time)
+	rdType := make(map[string]int)
 	timeout := 6 * time.Minute
 	const timeoutStatus int32 = 408
 
@@ -101,7 +101,7 @@ func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chHist chan
 	for reqhist := range chHist {
 		rhJson, _ := json.Marshal(reqhist)
 		//fmt.Printf("%s\n", rhJson)
-		kafka.SendMessage(producer, strconv.FormatInt(int64(reqhist.RequestId), 10), topic, &rhJson)
+		kafka.SendMessage(producer, reqhist.RequestId, topic, &rhJson)
 	}
 }
 
@@ -132,10 +132,9 @@ func ReadRequestHistory(client *sarama.Client, topic string, lastn int64) []byte
 func SaveRequestDetails(producer *sarama.SyncProducer, topic string, chDetails chan *[]RequestDetails,
 	cacheDetails *cache.CacheTable) {
 	for reqdetails := range chDetails {
-		rid := (*reqdetails)[0].RequestId
+		requestID := (*reqdetails)[0].RequestId
 		rhJson, _ := json.Marshal(reqdetails)
 		//fmt.Printf("%s\n", rhJson)
-		requestID := strconv.FormatInt(int64(rid), 10)
 		cacheDetails.Add(requestID, cacheDefaultExpiration, rhJson)
 		kafka.SendMessage(producer, requestID, topic, &rhJson)
 	}

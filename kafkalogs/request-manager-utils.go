@@ -134,7 +134,7 @@ func checkRequestDetailsCompleteSequence(msgType int, rdOrigin []RequestDetails)
 	return result
 }
 
-func monitorRdTimeout(rdTL *map[int32]time.Time, timeout time.Duration, chQAData chan *QAJsonData, statuscode int32) {
+func monitorRdTimeout(rdTL *map[string]time.Time, timeout time.Duration, chQAData chan *QAJsonData, statuscode int32) {
 	for {
 		timer1 := time.NewTimer(time.Second)
 		<-timer1.C

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -17,7 +16,7 @@ type QAJsonData struct {
 	ModuleVersion string `json:"module_version"`
 	ImageName     string `json:"image_name"`
 
-	RequestId int32   `json:"rid"`
+	RequestId string  `json:"rid"`
 	Key       string  `json:"key"`
 	Message   string  `json:"message"`
 	Error     string  `json:"message_error"`
@@ -45,6 +44,7 @@ func (qadata *QAJsonData) UnmarshalJSON(data []byte) error {
 	qadata.ModuleVersion = getFieldDataString(qadata.Z["module_version"])
 	qadata.ImageName = getFieldDataString(qadata.Z["image_name"])
 
+	qadata.RequestId = getFieldDataString(qadata.Z["rid"])
 	qadata.Key = getFieldDataString(qadata.Z["key"])
 	qadata.Message = getFieldDataString(qadata.Z["message"])
 	qadata.Error = getFieldDataString(qadata.Z["message_error"])
@@ -61,12 +61,6 @@ func (qadata *QAJsonData) UnmarshalJSON(data []byte) error {
 	if isValidField(qadata.Z["timestamp"], reflect.String) {
 		t1, _ := time.Parse(time.RFC3339, qadata.Z["timestamp"].(string))
 		qadata.Timestamp = t1
-	}
-
-	reqid := getFieldDataString(qadata.Z["rid"])
-	rid, errParse := strconv.ParseInt(reqid, 10, 64)
-	if errParse == nil {
-		qadata.RequestId = int32(rid)
 	}
 
 	if isValidField(qadata.Z["topics"], reflect.Slice) {
