@@ -1,4 +1,4 @@
-package kafkalogs
+package bablrequest
 
 import (
 	"sort"
@@ -65,7 +65,7 @@ func updateRequestDetailsMsgType(msgType int, rdOrigin []RequestDetails) []Reque
 	mState.Initialize()
 
 	for _, reqdet := range rdOrigin {
-		//reqdet.Debug()
+		reqdet.Debug()
 		// adjust step for the new msgType
 		reqdet.Step = mState.GetProgressFromString(msgType, reqdet.Message)
 		keys = append(keys, reqdet.Step)

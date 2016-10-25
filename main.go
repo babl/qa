@@ -9,8 +9,8 @@ import (
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
+	. "github.com/larskluge/babl-qa/bablrequest"
 	. "github.com/larskluge/babl-qa/httpserver"
-	. "github.com/larskluge/babl-qa/kafkalogs"
 	"github.com/larskluge/babl-server/kafka"
 	cache "github.com/muesli/cache2go"
 )

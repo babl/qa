@@ -1,4 +1,4 @@
-package kafkalogs
+package bablrequest
 
 import (
 	"encoding/json"
