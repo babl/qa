@@ -45,8 +45,10 @@ func MonitorRequest(chQAData chan *QAJsonData,
 		// sets the message step
 		progress := mState.GetProgress(rdType[qadata.RequestId], qadata)
 
-		// update rdTimeout with now(): exclude previous timedout requests
-		if qadata.Status != timeoutStatus {
+		// update rdTimeout with now():
+		// + exclude previous timedout requests
+		// + excludes messages with unkown progress
+		if qadata.Status != timeoutStatus && progress > 0 {
 			rdTimeout[qadata.RequestId] = time.Now()
 		}
 
