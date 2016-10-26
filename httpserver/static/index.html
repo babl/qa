@@ -38,8 +38,7 @@
                 <form class="navbar-form navbar-left" method="get" action="javascript:updateRequestHistory()">
                     <div class="form-group">
                         <input id="datasize" type="text" class="form-control" placeholder="maxlines" size="4" value="20">&nbsp;
-                        <!--<a href="javascript:void(0)"><span class="glyphicon glyphicon-refresh" aria-hidden="true" onclick="updateRequestHistory()"></span></a>-->
-                        <button type="button" class="btn btn-default btn-sm" onclick="updateRequestHistory()">
+                        <button id="reqHistButton" type="button" class="btn btn-default btn-sm" onclick="updateRequestHistory()">
                           <span class="glyphicon glyphicon-refresh"></span> Refresh
                         </button>
                         <button id="wsButton" type="button" class="btn btn-default btn-sm" onclick="connectWebsocket()">
@@ -64,7 +63,18 @@
                     <th>Supervisor</th>
                     <th>Module</th>
                     <th>Duration [ms]</th>
-                    <th>Status</th>
+                    <th>
+                        <div class="btn-group">
+                            <button id="statusDropDown" type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">Status: all
+                              <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="javascript:filterTableDataByClass()">All</a></li>
+                                <li><a href="javascript:filterTableDataByClass('success')">Success</a></li>
+                                <li><a href="javascript:filterTableDataByClass('fail')">Fail</a></li>
+                            </ul>
+                        </div>
+                    </th>
                 </tr>
             </thead>
 

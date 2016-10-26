@@ -29,19 +29,24 @@ function getMessage(topic, partition, offset) {
 }
 
 function getError(err) {
-  $("#titleModal").text("Error Message")
+  $("#titleModal").text("Error Message");
   $("#messageModal").text(err);
   $("#myModal").modal();
 }
 
 function tableDataAddItem(item) {
-  var status_green = "#88CF85"
-  var status_red = "#F87070"
-  var duration_green = "#48B444"
-  var duration_orange = "#F4B27B"
-  var duration_red = "#F53636"
+  var status_green = "#88CF85";
+  var status_red = "#F87070";
+  var duration_green = "#48B444";
+  var duration_orange = "#F4B27B";
+  var duration_red = "#F53636";
 
   var status_color = item.status == 200 ? status_green : status_red;
+  var status_class = item.status == 200 ? "success" : "fail";
+  var status_style = "";
+  if ((statusFilter == "success" && item.status != 200) || (statusFilter == "fail" && item.status == 200)) {
+    status_style = "style=\"display: none;\""
+  }
   var duration_color;
   if (item.duration_ms < 1000) {
     duration_color = duration_green;
@@ -51,7 +56,7 @@ function tableDataAddItem(item) {
     duration_color = duration_red;
   }
   $("#tableDataHeader").after(
-    "<tbody id=\""+item.rid+"\" class=\"bodycontent\">"+
+    "<tbody id=\""+item.rid+"\" class=\"bodycontent "+status_class+"\" "+status_style+">"+
       "<tr class=\"trcontent\">"+
         "<th class=\"text-center\">"+
           "<a href=\"javascript:void(0)\"><span id=\"icon-"+item.rid+"\" class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\" onclick=\"getRequestDetails('"+item.rid+"')\"></span></a>"+
@@ -64,6 +69,17 @@ function tableDataAddItem(item) {
         "<td bgcolor=\""+status_color+"\">"+item.status+"</td>"+
       "</tr>"+
     "</tbody>");
+    var count = 0;
+    var trs_success = $("#tableData").find(".bodycontent.success");
+    var trs_fail = $("#tableData").find(".bodycontent.fail");
+    if (statusFilter == "success") {
+      count = trs_success.length;
+    } else if (statusFilter == "fail") {
+      count = trs_fail.length;
+    } else {
+      count = trs_success.length + trs_fail.length;
+    }
+    tableDataAppendCount(count);
 }
 
 function tableDataAddInfo(msg) {
@@ -76,8 +92,9 @@ function tableDataAddInfo(msg) {
 }
 
 function tableDataAppendCount(count) {
+  $("#tableDataCount").remove();
   $("#tableData").append(
-    "<tbody class=\"bodycontent\">"+
+    "<tbody id=\"tableDataCount\" class=\"bodycontent\">"+
     "  <tr class=\"trcontent\">"+
     "    <td colspan=\"8\" class=\"text-center\"><h6>Found "+count+" records</h6></td>"+
     "  </tr>"+
@@ -94,10 +111,12 @@ function updateRequestHistory() {
     var count = data.length
     //var data_reverse = data.slice(0).reverse();
     $(".bodycontent").remove()
+    $("#statusDropDown").text("Status: all")
     $.each(data, function(i, item) {
       tableDataAddItem(item);
     });
     tableDataAppendCount(count);
+    $('#reqHistButton').focus();
   });
 }
 //from miliseconds to seconds
@@ -150,6 +169,14 @@ function getRequestDetails(rid) {
       "        </tr>"+
       "    </thead>";
 
+    // get message status
+    var globalMessageStatus = 0;
+    $.each(data, function(i, item) {
+      if (item.status != 0 && globalMessageStatus == 0) {
+        globalMessageStatus = item.status;
+      }
+    });
+    var status_class = globalMessageStatus == 200 ? "details_success" : "details_fail";
     $.each(data, function(i, item) {
       var msgHidden = 'hidden'
       var errHidden = 'hidden'
@@ -161,14 +188,14 @@ function getRequestDetails(rid) {
       // optional messages
       if (item.step === 100) {
         details +=
-          "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent\">"+
+          "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent "+status_class+"\">"+
           "  <tr class=\"trcontent\">"+
           "    <td colspan=\"12\" class=\"text-center\">additional messages</td>"+
           "  </tr>"+
           "</tbody>";
       }
       details +=
-        "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent\">"+
+        "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent"+status_class+"\">"+
         "  <tr class=\"trcontent\">"+
         "    <td>"+item.step+"</td>"+
         "    <td>"+item.rid+"</td>"+
@@ -240,4 +267,30 @@ function connectWebsocket() {
   } else {
     tableDataAddInfo("Your browser does not support WebSockets");
   }
+}
+
+var statusFilter = null;
+function filterTableDataByClass(filterClass) {
+  if (statusFilter == filterClass) {
+    console.log("same filter: ", statusFilter);
+    return;
+  }
+  statusFilter = filterClass;
+
+  var count = 0;
+  var trs_all = $("#tableData").find(".bodycontent");
+  count = trs_all.length - 1;
+  trs_all.hide();
+  if (filterClass != null) {
+    var trs = $("#tableData").find(".bodycontent."+filterClass);
+    count = trs.length;
+    var trs_children = $("#tableData").find(".bodycontent.details_"+filterClass);
+    trs_children.show();
+    trs.show();
+    $("#statusDropDown").text("Status: "+filterClass)
+  } else {
+    trs_all.show();
+    $("#statusDropDown").text("Status: all")
+  }
+  tableDataAppendCount(count);
 }
