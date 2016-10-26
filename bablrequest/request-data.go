@@ -23,6 +23,7 @@ type RequestDetails struct {
 	RequestHistory
 	Host      string `json:"host"`
 	Step      int    `json:"step"`
+	Progress  string `json:"progress"`
 	Topic     string `json:"topic"`
 	Partition int32  `json:"partition"`
 	Offset    int32  `json:"offset"`
@@ -69,6 +70,7 @@ func (reqdet *RequestDetails) ManualUnmarshalJSON(Z map[string]interface{}) erro
 
 	reqdet.Host = getFieldDataString(Z["host"])
 	reqdet.Step = getFieldDataInt(Z["step"])
+	reqdet.Progress = getFieldDataString(Z["progress"])
 	reqdet.Topic = getFieldDataString(Z["topic"])
 	reqdet.Partition = getFieldDataInt32(Z["partition"])
 	reqdet.Offset = getFieldDataInt32(Z["offset"])

@@ -194,10 +194,11 @@ function getRequestDetails(rid) {
           "  </tr>"+
           "</tbody>";
       }
+      var progress = item.progress || item.step;
       details +=
         "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent"+status_class+"\">"+
         "  <tr class=\"trcontent\">"+
-        "    <td>"+item.step+"</td>"+
+        "    <td>"+progress+"</td>"+
         "    <td>"+item.rid+"</td>"+
         "    <td>"+item.host+"</td>"+
         "    <td>"+item.supervisor+item.module+"</td>"+

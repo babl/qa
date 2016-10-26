@@ -1,6 +1,9 @@
 package bablrequest
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 const (
 	QAMsgTypeDefault = 1
@@ -45,11 +48,25 @@ func (this *MessageState) GetProgress(msgType int, qadata *QAJsonData) int {
 	return this.Default.GetProgress(qadata)
 }
 
+func (this *MessageState) GetProgressCompletion(msgType int, qadata *QAJsonData) string {
+	if msgType == QAMsgTypeAsync {
+		return this.Async.GetProgressCompletion(qadata)
+	}
+	return this.Default.GetProgressCompletion(qadata)
+}
+
 func (this *MessageState) GetProgressFromString(msgType int, message string) int {
 	if msgType == QAMsgTypeAsync {
 		return this.Async.GetProgressFromString(message, QAMsgSupervisor)
 	}
 	return this.Default.GetProgressFromString(message, QAMsgSupervisor)
+}
+
+func (this *MessageState) GetProgressCompletionFromString(msgType int, message string) string {
+	if msgType == QAMsgTypeAsync {
+		return this.Async.GetProgressCompletionFromString(message, QAMsgSupervisor)
+	}
+	return this.Default.GetProgressCompletionFromString(message, QAMsgSupervisor)
 }
 
 func (this *MessageState) FirstQAMsg(msgType int) int {
@@ -110,6 +127,16 @@ func (this *MessageDefault) GetProgress(qadata *QAJsonData) int {
 	return this.GetProgressFromString(qadata.Message, qadata.Supervisor)
 }
 
+func (this *MessageDefault) GetProgressCompletion(qadata *QAJsonData) string {
+	cProgress := strconv.Itoa(this.GetProgressFromString(qadata.Message, qadata.Supervisor))
+	tProgress := strconv.Itoa(this.LastQAMsg())
+	progress := cProgress + "/" + tProgress
+	if cProgress == "0" {
+		progress = "+"
+	}
+	return progress
+}
+
 func (this *MessageDefault) GetProgressFromString(message string, service string) int {
 	result := int(0)
 	if strings.Contains(message, this.msg1) && strings.Contains(service, QAMsgSupervisor) {
@@ -130,10 +157,15 @@ func (this *MessageDefault) GetProgressFromString(message string, service string
 	return result
 }
 
-/*
-func (this *MessageDefault) GetProgress(qadata *QAJsonData) int {
+func (this *MessageDefault) GetProgressCompletionFromString(message string, service string) string {
+	cProgress := strconv.Itoa(this.GetProgressFromString(message, service))
+	tProgress := strconv.Itoa(this.LastQAMsg())
+	progress := cProgress + "/" + tProgress
+	if cProgress == "0" {
+		progress = "+"
+	}
+	return progress
 }
-*/
 
 type MessageAsync struct {
 	/*
@@ -173,6 +205,16 @@ func (this *MessageAsync) GetProgress(qadata *QAJsonData) int {
 	return this.GetProgressFromString(qadata.Message, qadata.Supervisor)
 }
 
+func (this *MessageAsync) GetProgressCompletion(qadata *QAJsonData) string {
+	cProgress := strconv.Itoa(this.GetProgressFromString(qadata.Message, qadata.Supervisor))
+	tProgress := strconv.Itoa(this.LastQAMsg())
+	progress := cProgress + "/" + tProgress
+	if cProgress == "0" {
+		progress = "+"
+	}
+	return progress
+}
+
 func (this *MessageAsync) GetProgressFromString(message string, service string) int {
 	result := int(0)
 	if strings.Contains(message, this.msg1) && strings.Contains(service, QAMsgSupervisor) {
@@ -187,4 +229,14 @@ func (this *MessageAsync) GetProgressFromString(message string, service string) 
 		result = QAMsgTimeout
 	}
 	return result
+}
+
+func (this *MessageAsync) GetProgressCompletionFromString(message string, service string) string {
+	cProgress := strconv.Itoa(this.GetProgressFromString(message, service))
+	tProgress := strconv.Itoa(this.LastQAMsg())
+	progress := cProgress + "/" + tProgress
+	if cProgress == "0" {
+		progress = "+"
+	}
+	return progress
 }

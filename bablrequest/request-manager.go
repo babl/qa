@@ -44,6 +44,7 @@ func MonitorRequest(chQAData chan *QAJsonData,
 
 		// sets the message step
 		progress := mState.GetProgress(rdType[qadata.RequestId], qadata)
+		progressCompletion := mState.GetProgressCompletion(rdType[qadata.RequestId], qadata)
 
 		// update rdTimeout with now():
 		// + exclude previous timedout requests
@@ -65,7 +66,7 @@ func MonitorRequest(chQAData chan *QAJsonData,
 			} */
 
 		// RequestDetails log messages
-		rdList[qadata.RequestId] = append(rdList[qadata.RequestId], updateRequestDetails(progress, qadata))
+		rdList[qadata.RequestId] = append(rdList[qadata.RequestId], updateRequestDetails(progress, progressCompletion, qadata))
 		// RequestDetails: send data to channel if all 6 messages arrived (QAMsg1...QAMsg6)
 		// NOTE: this is required due to the async nature of log messages: e.g.:
 		// QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5

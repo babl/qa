@@ -32,7 +32,7 @@ func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory 
 	return data
 }
 
-func updateRequestDetails(progress int, qadata *QAJsonData) RequestDetails {
+func updateRequestDetails(progress int, progressCompletion string, qadata *QAJsonData) RequestDetails {
 	//qadata.DebugJson()
 	data := RequestDetails{
 		RequestHistory: RequestHistory{
@@ -47,6 +47,7 @@ func updateRequestDetails(progress int, qadata *QAJsonData) RequestDetails {
 		},
 		Host:      qadata.Host,
 		Step:      progress,
+		Progress:  progressCompletion,
 		Topic:     qadata.Topic,
 		Partition: qadata.Partition,
 		Offset:    qadata.Offset,
@@ -67,6 +68,7 @@ func updateRequestDetailsMsgType(msgType int, rdOrigin []RequestDetails) []Reque
 		//reqdet.Debug()
 		// adjust step for the new msgType
 		reqdet.Step = mState.GetProgressFromString(msgType, reqdet.Message)
+		reqdet.Progress = mState.GetProgressCompletionFromString(msgType, reqdet.Message)
 		keys = append(keys, reqdet.Step)
 		rdAuxList[reqdet.Step] = reqdet
 	}
