@@ -126,7 +126,7 @@ function parseTime(duration_ms){
   if (duration_ms < 1000) {
     time = Number(parseFloat(duration_ms)).toFixed(0)+"ms"
   } else if (duration_ms >= 1000 && duration_ms < 2000) {
-    time = Number(parseFloat(1703.433039)/1000).toFixed(2)+"s"
+    time = Number(parseFloat(duration_ms)/1000).toFixed(2)+"s"
   } else {
     var sec = parseFloat(duration_ms)/1000;
     var min = Math.floor(sec/60)
