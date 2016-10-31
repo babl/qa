@@ -34,14 +34,24 @@ function getError(err) {
   $("#myModal").modal();
 }
 
-function tableDataAddItem(item) {
+function tableDataUpdateItem(item) {
+  if (item.rid.length == 0 || item.rid.indexOf('/') > 0) {
+    return;
+  }
+  var tableRow = $('tbody#'+item.rid);
+  var status_white = "#FFFFFF";
   var status_green = "#88CF85";
   var status_red = "#F87070";
   var duration_green = "#48B444";
   var duration_orange = "#F4B27B";
   var duration_red = "#F53636";
 
-  var status_color = item.status == 200 ? status_green : status_red;
+  var status_color = status_white;
+  if (item.status == 200) {
+    status_color = status_green;
+  } else if (item.status != 0) {
+    status_color = status_red;
+  }
   var status_class = item.status == 200 ? "success" : "fail";
   var status_style = "";
   if ((statusFilter == "success" && item.status != 200) || (statusFilter == "fail" && item.status == 200)) {
@@ -55,7 +65,7 @@ function tableDataAddItem(item) {
   } else {
     duration_color = duration_red;
   }
-  $("#tableDataHeader").after(
+  var tableBodyContent =
     "<tbody id=\""+item.rid+"\" class=\"bodycontent "+status_class+"\" "+status_style+">"+
       "<tr class=\"trcontent\">"+
         "<th class=\"text-center\">"+
@@ -68,7 +78,13 @@ function tableDataAddItem(item) {
         "<td><span style=\"color:"+duration_color+"\">"+parseTime(item.duration_ms)+"</span></td>"+
         "<td bgcolor=\""+status_color+"\">"+item.status+"</td>"+
       "</tr>"+
-    "</tbody>");
+    "</tbody>";
+    // tableBodyContent: insert or update
+    if (tableRow.length == 0) {
+      $("#tableDataHeader").after(tableBodyContent);
+    } else {
+      tableRow.replaceWith(tableBodyContent);
+    }
     var count = 0;
     var trs_success = $("#tableData").find(".bodycontent.success");
     var trs_fail = $("#tableData").find(".bodycontent.fail");
@@ -113,7 +129,7 @@ function updateRequestHistory() {
     $(".bodycontent").remove()
     $("#statusDropDown").text("Status: all")
     $.each(data, function(i, item) {
-      tableDataAddItem(item);
+      tableDataUpdateItem(item);
     });
     tableDataAppendCount(count);
     $('#reqHistButton').focus();
@@ -262,7 +278,7 @@ function connectWebsocket() {
         var messages = evt.data.split('\n');
         for (var i = 0; i < messages.length; i++) {
           var item = JSON.parse(messages[i]);
-          tableDataAddItem(item);
+          tableDataUpdateItem(item);
         }
       };
   } else {

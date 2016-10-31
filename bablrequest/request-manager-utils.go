@@ -1,6 +1,7 @@
 package bablrequest
 
 import (
+	"encoding/json"
 	"sort"
 	"time"
 )
@@ -28,7 +29,7 @@ func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory 
 	if data.Error == "" && qadata.Error != "" {
 		data.Error = qadata.Error
 	}
-	//data.Debug()
+	data.Debug()
 	return data
 }
 
@@ -172,4 +173,10 @@ func monitorRdTimeout(rdTL *map[string]time.Time, timeout time.Duration, chQADat
 			}
 		}
 	}
+}
+
+func updateWSHistory(rh RequestHistory, chWSHist chan *[]byte) {
+	wsData := rh
+	rhJson, _ := json.Marshal(wsData)
+	chWSHist <- &rhJson
 }

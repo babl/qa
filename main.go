@@ -75,7 +75,7 @@ func run(listen, kafkaBrokers string, dbg bool) {
 
 	// other higher level go rotines go here
 	log.Warn("App Save/Broadcast Data")
-	go MonitorRequest(chQAData, chHistory, chWSHistory, chDetails)
+	go MonitorRequest(chQAData, chHistory, chWSHistory, chDetails, cacheDetails)
 	go SaveRequestHistory(s.kafkaProducer, kafkaTopicHistory, chHistory)
 	go WSBroadcastRequestHistory(wsHub, chWSHistory)
 	go SaveRequestDetails(s.kafkaProducer, kafkaTopicDetails, chDetails, cacheDetails)

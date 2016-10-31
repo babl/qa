@@ -2,6 +2,7 @@ package bablrequest
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -16,14 +17,17 @@ import (
 const cacheDefaultExpiration = 7 * 24 * time.Hour
 
 func MonitorRequest(chQAData chan *QAJsonData,
-	chHist chan *RequestHistory, chWSHist chan *[]byte, chDetails chan *[]RequestDetails) {
+	chHist chan *RequestHistory, chWSHist chan *[]byte,
+	chDetails chan *[]RequestDetails, cacheDetails *cache.CacheTable) {
 	mState := MessageState{}
 	mState.Initialize()
 	rhList := make(map[string]RequestHistory)
 	rdList := make(map[string][]RequestDetails)
 	rdTimeout := make(map[string]time.Time)
 	rdType := make(map[string]int)
+	reqCompleted := make(map[string]bool)
 	timeout := 6 * time.Minute
+	waitBeforeSave := 10 * time.Second
 	const timeoutStatus int32 = 408
 
 	// monitor rdTimeout list to check if request takes longer than timeout
@@ -32,6 +36,11 @@ func MonitorRequest(chQAData chan *QAJsonData,
 
 	for qadata := range chQAData {
 		//qadata.DebugJson()
+
+		//--------------------------------------------------------------------------
+		// force sync. request to avoid map multi access (Add/Delete)
+		FlushRequestData(&rhList, &rdList, &rdType, &reqCompleted)
+		//--------------------------------------------------------------------------
 
 		// verify message type, defaults to normal message and sets to Async in special case
 		if _, ok := rdType[qadata.RequestId]; !ok {
@@ -53,65 +62,119 @@ func MonitorRequest(chQAData chan *QAJsonData,
 			rdTimeout[qadata.RequestId] = time.Now()
 		}
 
+		//--------------------------------------------------------------------------
 		// RequestHistory: update log messages
+		//--------------------------------------------------------------------------
 		rhList[qadata.RequestId] = updateRequestHistory(qadata, rhList[qadata.RequestId])
-		// RequestHistory: send data to channel if last message arrived (QAMsg6)
-		/*
-			if progress == mState.LastQAMsg(rdType[qadata.RequestId]) ||
-				checkRequestDetailsLastMsg(rdType[qadata.RequestId], rdList[qadata.RequestId]) ||
-				qadata.Status == timeoutStatus {
-				data := rhList[qadata.RequestId]
-				chHist <- &data
-				delete(rhList, qadata.RequestId)
-			} */
+		// realtime update of the websockets channel
+		updateWSHistory(rhList[qadata.RequestId], chWSHist)
+		//--------------------------------------------------------------------------
 
+		//--------------------------------------------------------------------------
 		// RequestDetails log messages
+		//--------------------------------------------------------------------------
 		rdList[qadata.RequestId] = append(rdList[qadata.RequestId], updateRequestDetails(progress, progressCompletion, qadata))
+		// realtime update of the details cache
+		SaveCacheRequestDetails(qadata.RequestId, rdList[qadata.RequestId], cacheDetails)
+		//--------------------------------------------------------------------------
+
 		// RequestDetails: send data to channel if all 6 messages arrived (QAMsg1...QAMsg6)
 		// NOTE: this is required due to the async nature of log messages: e.g.:
 		// QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5
 		if checkRequestDetailsCompleteSequence(rdType[qadata.RequestId], rdList[qadata.RequestId]) ||
 			qadata.Status == timeoutStatus {
-			// logs.history
-			data := rhList[qadata.RequestId]
-			// checks if RequestHistory MODULE field is empty, if so gets module name from supvervisor2 topic
-			/*
-				if len(data.Module) == 0 {
-					detailsList := orderbystepRequestDetails(rdList[qadata.RequestId])
-					re := regexp.MustCompile(`([0-9a-zA-Z]+)`)
-					result := re.FindAllString(detailsList[0].Topic, -1)
-					data.Module = result[1] + "/" + result[2]
-				}
-			*/
-			chHist <- &data
-			rhJson, _ := json.Marshal(data)
-			chWSHist <- &rhJson
-			delete(rhList, qadata.RequestId)
 
-			// logs.details
-			rdList[qadata.RequestId] = orderbystepRequestDetails(rdList[qadata.RequestId])
-			datadetails := rdList[qadata.RequestId]
-			chDetails <- &datadetails
-			delete(rdList, qadata.RequestId)
-			delete(rdType, qadata.RequestId)
+			// re-order RequestDetails data
+			//rdList[qadata.RequestId] = orderbystepRequestDetails(rdList[qadata.RequestId])
+
 			// resets rdTimeout, to be deleted by the monitor process
 			rdTimeout[qadata.RequestId] = time.Time{}
+			if _, ok := reqCompleted[qadata.RequestId]; !ok {
+				// request is in the process to be complete (completed when true)
+				reqCompleted[qadata.RequestId] = false
+				fmt.Println("Process is about to complete: ", qadata.RequestId)
+				//go WriteRequestData(waitBeforeSave, qadata.RequestId, &rhList, &rdList, &rdType, &rdCompleted, chHist, chDetails)
+				go WriteRequestData(waitBeforeSave, qadata.RequestId, &rhList, &rdList, &reqCompleted, chHist, chDetails)
+			}
 		}
 	}
+}
+
+func WriteRequestData(waitBeforeSave time.Duration, rid string,
+	rhList *map[string]RequestHistory, rdList *map[string][]RequestDetails, reqCompleted *map[string]bool,
+	chHist chan *RequestHistory, chDetails chan *[]RequestDetails) {
+
+	fmt.Println("waitBeforeSave ...")
+	timer1 := time.NewTimer(waitBeforeSave)
+	<-timer1.C
+	fmt.Println("saving data for rid=", rid)
+
+	// write to kafka logs.history
+	data := (*rhList)[rid]
+	chHist <- &data
+
+	// write to kafka logs.details
+	// re-order RequestDetails data
+	datadetails := orderbystepRequestDetails((*rdList)[rid])
+	chDetails <- &datadetails
+
+	// request completed
+	(*reqCompleted)[rid] = true
+	fmt.Println("Process is completed: ", rid)
+}
+
+func FlushRequestData(rhList *map[string]RequestHistory, rdList *map[string][]RequestDetails,
+	rdType *map[string]int, rdCompleted *map[string]bool) {
+
+	fmt.Println("rhList (before) => ", len(*rhList))
+	fmt.Println("rdList (before) => ", len(*rdList))
+	fmt.Println("rdType (before) => ", len(*rdType))
+	fmt.Println("rdCompleted (before) => ", len(*rdCompleted))
+
+	for rid, val := range *rdCompleted {
+		fmt.Printf("[%s] => [%t]\n", rid, val)
+		if val == true {
+			if _, ok := (*rhList)[rid]; ok {
+				delete(*rhList, rid)
+				fmt.Println("rhList (after) => ", len(*rhList))
+			}
+
+			if _, ok := (*rdList)[rid]; ok {
+				delete(*rdList, rid)
+				fmt.Println("rdList (after) => ", len(*rdList))
+			}
+
+			if _, ok := (*rdType)[rid]; ok {
+				delete(*rdType, rid)
+				fmt.Println("rdType (after) => ", len(*rdType))
+			}
+
+			if _, ok := (*rdCompleted)[rid]; ok {
+				delete(*rdCompleted, rid)
+				fmt.Println("rdCompleted (after) => ", len(*rdCompleted))
+			}
+		}
+	}
+	/*
+		for rid, val := range *rdCompleted {
+			fmt.Printf("[%s] => [%t]\n", rid, val)
+			if val == true {
+				if _, ok := (*rdCompleted)[rid]; ok {
+					delete(*rdCompleted, rid)
+					fmt.Println("rdCompleted (after) => ", len(*rdCompleted))
+				}
+			}
+		}
+	*/
+	fmt.Println("")
 }
 
 func SaveRequestHistory(producer *sarama.SyncProducer, topic string, chHist chan *RequestHistory) {
 	for reqhist := range chHist {
 		rhJson, _ := json.Marshal(reqhist)
 		//fmt.Printf("%s\n", rhJson)
+		fmt.Println("SaveRequestHistory rid=", reqhist.RequestId)
 		kafka.SendMessage(producer, reqhist.RequestId, topic, &rhJson)
-	}
-}
-
-func WSBroadcastRequestHistory(wsHub *Hub, chWSHist chan *[]byte) {
-	for rhJson := range chWSHist {
-		//fmt.Printf("%s\n", *rhJson)
-		wsHub.Broadcast <- *rhJson
 	}
 }
 
@@ -138,9 +201,19 @@ func SaveRequestDetails(producer *sarama.SyncProducer, topic string, chDetails c
 		requestID := (*reqdetails)[0].RequestId
 		rhJson, _ := json.Marshal(reqdetails)
 		//fmt.Printf("%s\n", rhJson)
-		cacheDetails.Add(requestID, cacheDefaultExpiration, rhJson)
+		fmt.Println("SaveRequestDetails rid=", requestID)
+		//cacheDetails.Add(requestID, cacheDefaultExpiration, rhJson)
+		SaveCacheRequestDetails(requestID, *reqdetails, cacheDetails)
 		kafka.SendMessage(producer, requestID, topic, &rhJson)
 	}
+}
+
+func SaveCacheRequestDetails(requestID string, rdOrigin []RequestDetails,
+	cacheDetails *cache.CacheTable) {
+	rhJson, _ := json.Marshal(rdOrigin)
+	//fmt.Printf("%s\n", rhJson)
+	fmt.Println("SaveCacheRequestDetails rid=", requestID)
+	cacheDetails.Add(requestID, cacheDefaultExpiration, rhJson)
 }
 
 func ReadRequestDetailsFromCache(requestid string, cacheDetails *cache.CacheTable) []byte {
@@ -202,4 +275,11 @@ func ReadRequestPayload(client *sarama.Client, topic string, partition string, o
 	offsetInt, _ := strconv.ParseInt(offset, 10, 64)
 	result := kafka.ConsumeTopicPartitionOffset(client, topic, int32(partitionInt), offsetInt)
 	return result.Value
+}
+
+func WSBroadcastRequestHistory(wsHub *Hub, chWSHist chan *[]byte) {
+	for rhJson := range chWSHist {
+		//fmt.Printf("%s\n", *rhJson)
+		wsHub.Broadcast <- *rhJson
+	}
 }
