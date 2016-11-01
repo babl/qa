@@ -83,7 +83,16 @@ function tableDataUpdateItem(item) {
     if (tableRow.length == 0) {
       $("#tableDataHeader").after(tableBodyContent);
     } else {
+      var tableDetailsRow = $('#tbase-'+item.rid);
+      var tableDetailsHTML = "";
+      if (tableDetailsRow.length > 0) {
+        tableDetailsHTML = tableDetailsRow.html();
+      }
       tableRow.replaceWith(tableBodyContent);
+      if (tableDetailsHTML.length > 0) {
+        $("#icon-"+item.rid).removeClass("glyphicon-plus").addClass("glyphicon-minus");
+        $("#"+item.rid).append("<tr id=\"tbase-"+item.rid+"\" class=\"trcontent\">"+tableDetailsHTML+"</tr>");
+      }
     }
     var count = 0;
     var trs_success = $("#tableData").find(".bodycontent.success");
@@ -96,6 +105,16 @@ function tableDataUpdateItem(item) {
       count = trs_success.length + trs_fail.length;
     }
     tableDataAppendCount(count);
+}
+
+function tableDataUpdateItemDetails(data) {
+  if (data.length == 0) {
+    return;
+  }
+  var tableDetailsRow = $('#tbase-'+data[0].rid);
+  if (tableDetailsRow.length > 0) {
+    updateRequestDetails(data);
+  }
 }
 
 function tableDataAddInfo(msg) {
@@ -152,6 +171,89 @@ function parseTime(duration_ms){
   return time
 }
 
+function updateRequestDetails(data) {
+  var rid = data[0].rid;
+  var tableDetailsRow = $('#tbase-'+rid);
+  if (tableDetailsRow.length > 0) {
+    tableDetailsRow.remove();
+  }
+  var details =
+    "<table class=\"table table-condensed table-bordered table-striped table-hover\">"+
+    "    <thead>"+
+    "      <tr>"+
+    "        <th>Step</th>"+
+    "        <th>RequestId</th>"+
+    "        <th>Host</th>"+
+    "        <th>Service</th>"+
+    "        <th>Message</th>"+
+    "        <th>Topic</th>"+
+    "        <th>Partition</th>"+
+    "        <th>Offset</th>"+
+    "        <th>Msg</th>"+
+    "        <th>Error</th>"+
+    "        <th>Duration [ms]</th>"+
+    "        <th>Status</th>"+
+    "        </tr>"+
+    "    </thead>";
+
+  // get message status
+  var globalMessageStatus = 0;
+  $.each(data, function(i, item) {
+    if (item.status != 0 && globalMessageStatus == 0) {
+      globalMessageStatus = item.status;
+    }
+  });
+  var status_class = globalMessageStatus == 200 ? "details_success" : "details_fail";
+  $.each(data, function(i, item) {
+    var msgHidden = 'hidden'
+    var errHidden = 'hidden'
+    if (item.topic.length > 0 && (item.partition > 0 || item.offset > 0))
+      msgHidden = ''
+    if (item.status != 200 && item.status != 0 && item.message_error.length > 0)
+      errHidden = ''
+
+    // optional messages
+    if (item.step === 100) {
+      details +=
+        "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent "+status_class+"\">"+
+        "  <tr class=\"trcontent\">"+
+        "    <td colspan=\"12\" class=\"text-center\">additional messages</td>"+
+        "  </tr>"+
+        "</tbody>";
+    }
+    var progress = item.progress || item.step;
+    details +=
+      "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent"+status_class+"\">"+
+      "  <tr class=\"trcontent\">"+
+      "    <td>"+progress+"</td>"+
+      "    <td>"+item.rid+"</td>"+
+      "    <td>"+item.host+"</td>"+
+      "    <td>"+item.supervisor+item.module+"</td>"+
+      "    <td>"+item.message+"</td>"+
+      "    <td>"+item.topic+"</td>"+
+      "    <td>"+item.partition+"</td>"+
+      "    <td>"+item.offset+"</td>"+
+      "    <td><button type=\"button\" class=\""+msgHidden+" btn btn-default btn-sm\" onclick=\"getMessage('"+item.topic+"',"+item.partition+","+item.offset+")\">"+
+      "        <span class=\"glyphicon glyphicon-file\"></span></button>"+
+      "    </td>"+
+      "    <td><button type=\"button\" class=\""+errHidden+" btn btn-default btn-sm\" onclick=\"getError('"+item.message_error+"')\">"+
+      "        <span class=\"glyphicon glyphicon-exclamation-sign\"></span></button>"+
+      "    </td>"+
+      "    <td>"+parseTime(item.duration_ms)+"</td>"+
+      "    <td>"+item.status+"</td>"+
+      "  </tr>"+
+      "</tbody>";
+  });
+  details += "</table>";
+  $("#icon-"+rid).removeClass("glyphicon-plus").addClass("glyphicon-minus");
+  $("#"+rid).append(
+    "    <tr id=\"tbase-"+rid+"\" class=\"trcontent\">"+
+    "        <th class=\"text-center\">"+
+    "        </th>"+
+    "        <td colspan=\"8\">"+details+"</td>"+
+    "    </tr>");
+}
+
 function getRequestDetails(rid) {
 
   if ($("#tbase-"+rid).length) {
@@ -166,81 +268,7 @@ function getRequestDetails(rid) {
     format: "json"
   })
   .done(function(data) {
-    var details =
-      "<table class=\"table table-condensed table-bordered table-striped table-hover\">"+
-      "    <thead>"+
-      "      <tr>"+
-      "        <th>Step</th>"+
-      "        <th>RequestId</th>"+
-      "        <th>Host</th>"+
-      "        <th>Service</th>"+
-      "        <th>Message</th>"+
-      "        <th>Topic</th>"+
-      "        <th>Partition</th>"+
-      "        <th>Offset</th>"+
-      "        <th>Msg</th>"+
-      "        <th>Error</th>"+
-      "        <th>Duration [ms]</th>"+
-      "        <th>Status</th>"+
-      "        </tr>"+
-      "    </thead>";
-
-    // get message status
-    var globalMessageStatus = 0;
-    $.each(data, function(i, item) {
-      if (item.status != 0 && globalMessageStatus == 0) {
-        globalMessageStatus = item.status;
-      }
-    });
-    var status_class = globalMessageStatus == 200 ? "details_success" : "details_fail";
-    $.each(data, function(i, item) {
-      var msgHidden = 'hidden'
-      var errHidden = 'hidden'
-      if (item.topic.length > 0 && (item.partition > 0 || item.offset > 0))
-        msgHidden = ''
-      if (item.status != 200 && item.status != 0 && item.message_error.length > 0)
-        errHidden = ''
-
-      // optional messages
-      if (item.step === 100) {
-        details +=
-          "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent "+status_class+"\">"+
-          "  <tr class=\"trcontent\">"+
-          "    <td colspan=\"12\" class=\"text-center\">additional messages</td>"+
-          "  </tr>"+
-          "</tbody>";
-      }
-      var progress = item.progress || item.step;
-      details +=
-        "<tbody id=\"tb-"+item.rid+"\" class=\"bodycontent"+status_class+"\">"+
-        "  <tr class=\"trcontent\">"+
-        "    <td>"+progress+"</td>"+
-        "    <td>"+item.rid+"</td>"+
-        "    <td>"+item.host+"</td>"+
-        "    <td>"+item.supervisor+item.module+"</td>"+
-        "    <td>"+item.message+"</td>"+
-        "    <td>"+item.topic+"</td>"+
-        "    <td>"+item.partition+"</td>"+
-        "    <td>"+item.offset+"</td>"+
-        "    <td><button type=\"button\" class=\""+msgHidden+" btn btn-default btn-sm\" onclick=\"getMessage('"+item.topic+"',"+item.partition+","+item.offset+")\">"+
-        "        <span class=\"glyphicon glyphicon-file\"></span></button>"+
-        "    </td>"+
-        "    <td><button type=\"button\" class=\""+errHidden+" btn btn-default btn-sm\" onclick=\"getError('"+item.message_error+"')\">"+
-        "        <span class=\"glyphicon glyphicon-exclamation-sign\"></span></button>"+
-        "    </td>"+
-        "    <td>"+parseTime(item.duration_ms)+"</td>"+
-        "    <td>"+item.status+"</td>"+
-        "  </tr>"+
-        "</tbody>";
-    });
-    details += "</table>";
-    $("#icon-"+rid).removeClass("glyphicon-plus").addClass("glyphicon-minus");
-    $("#"+rid).append(
-      "    <tr id=\"tbase-"+rid+"\" class=\"trcontent\">"+
-      "        <th class=\"text-center\">"+
-      "        </th>"+
-      "        <td colspan=\"8\">"+details+"</td>"+
-      "    </tr>")
+    updateRequestDetails(data);
   });
 }
 
@@ -278,7 +306,11 @@ function connectWebsocket() {
         var messages = evt.data.split('\n');
         for (var i = 0; i < messages.length; i++) {
           var item = JSON.parse(messages[i]);
-          tableDataUpdateItem(item);
+          if (item.type === "history") {
+            tableDataUpdateItem(item.data);
+          } else if (item.type === "details") {
+            tableDataUpdateItemDetails(item.data);
+          }
         }
       };
   } else {

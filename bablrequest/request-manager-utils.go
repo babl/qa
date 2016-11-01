@@ -29,7 +29,7 @@ func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory 
 	if data.Error == "" && qadata.Error != "" {
 		data.Error = qadata.Error
 	}
-	data.Debug()
+	//data.Debug()
 	return data
 }
 
@@ -176,7 +176,21 @@ func monitorRdTimeout(rdTL *map[string]time.Time, timeout time.Duration, chQADat
 }
 
 func updateWSHistory(rh RequestHistory, chWSHist chan *[]byte) {
-	wsData := rh
+	type DataHistory struct {
+		Type string         `json:"type"`
+		Data RequestHistory `json:"data"`
+	}
+	wsData := &DataHistory{Type: "history", Data: rh}
+	rhJson, _ := json.Marshal(wsData)
+	chWSHist <- &rhJson
+}
+
+func updateWSDetails(rd []RequestDetails, chWSHist chan *[]byte) {
+	type DataDetails struct {
+		Type string           `json:"type"`
+		Data []RequestDetails `json:"data"`
+	}
+	wsData := &DataDetails{Type: "details", Data: rd}
 	rhJson, _ := json.Marshal(wsData)
 	chWSHist <- &rhJson
 }
