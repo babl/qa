@@ -47,14 +47,14 @@ function tableDataUpdateItem(item) {
   var duration_red = "#F53636";
 
   var status_color = status_white;
-  if (item.status == 200) {
+  if (item.status == "SUCCESS") {
     status_color = status_green;
-  } else if (item.status != 0) {
+  } else if (item.status != "SUCCESS" && item.status.length > 0) {
     status_color = status_red;
   }
-  var status_class = item.status == 200 ? "success" : "fail";
+  var status_class = item.status == "SUCCESS" ? "success" : "fail";
   var status_style = "";
-  if ((statusFilter == "success" && item.status != 200) || (statusFilter == "fail" && item.status == 200)) {
+  if ((statusFilter == "success" && item.status != "SUCCESS") || (statusFilter == "fail" && item.status == "SUCCESS")) {
     status_style = "style=\"display: none;\""
   }
   var duration_color;
@@ -71,12 +71,12 @@ function tableDataUpdateItem(item) {
         "<th class=\"text-center\">"+
           "<a href=\"javascript:void(0)\"><span id=\"icon-"+item.rid+"\" class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\" onclick=\"getRequestDetails('"+item.rid+"')\"></span></a>"+
         "</th>"+
-        "<td>"+item.time+"</td>"+
-        "<td>"+item.rid+"</td>"+
-        "<td>"+item.supervisor+"</td>"+
-        "<td>"+item.module+"</td>"+
-        "<td><span style=\"color:"+duration_color+"\">"+parseTime(item.duration_ms)+"</span></td>"+
-        "<td bgcolor=\""+status_color+"\">"+item.status+"</td>"+
+        "<td onclick=\"getRequestDetails('"+item.rid+"')\">"+item.time+"</td>"+
+        "<td onclick=\"getRequestDetails('"+item.rid+"')\">"+item.rid+"</td>"+
+        "<td onclick=\"getRequestDetails('"+item.rid+"')\">"+item.supervisor+"</td>"+
+        "<td onclick=\"getRequestDetails('"+item.rid+"')\">"+item.module+"</td>"+
+        "<td onclick=\"getRequestDetails('"+item.rid+"')\"><span style=\"color:"+duration_color+"\">"+parseTime(item.duration_ms)+"</span></td>"+
+        "<td onclick=\"getRequestDetails('"+item.rid+"')\" bgcolor=\""+status_color+"\">"+item.status+"</td>"+
       "</tr>"+
     "</tbody>";
     // tableBodyContent: insert or update
@@ -197,19 +197,19 @@ function updateRequestDetails(data) {
     "    </thead>";
 
   // get message status
-  var globalMessageStatus = 0;
+  var globalMessageStatus = "";
   $.each(data, function(i, item) {
-    if (item.status != 0 && globalMessageStatus == 0) {
+    if (item.status != "SUCCESS" && globalMessageStatus == "") {
       globalMessageStatus = item.status;
     }
   });
-  var status_class = globalMessageStatus == 200 ? "details_success" : "details_fail";
+  var status_class = globalMessageStatus == "SUCCESS" ? "details_success" : "details_fail";
   $.each(data, function(i, item) {
     var msgHidden = 'hidden'
     var errHidden = 'hidden'
     if (item.topic.length > 0 && (item.partition > 0 || item.offset > 0))
       msgHidden = ''
-    if (item.status != 200 && item.status != 0 && item.message_error.length > 0)
+    if (item.status != "SUCCESS" && item.status != "" && item.message_error.length > 0)
       errHidden = ''
 
     // optional messages

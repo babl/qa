@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
@@ -20,9 +19,8 @@ type server struct {
 	kafkaProducer *sarama.SyncProducer
 }
 
-const Version = "1.0.0"
+const Version = "1.1.1"
 const clientID = "babl-qa"
-const ModuleExecutionWaitTimeout = 5 * time.Minute
 
 var debug bool
 

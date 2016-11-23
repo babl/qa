@@ -22,16 +22,9 @@ func MonitorRequest(chQAData chan *QAJsonData,
 	mState.Initialize()
 	rhList := make(map[string]RequestHistory)
 	rdList := make(map[string][]RequestDetails)
-	rdTimeout := make(map[string]time.Time)
 	rdType := make(map[string]int)
 	reqCompleted := make(map[string]bool)
-	timeout := 6 * time.Minute
-	waitBeforeSave := 10 * time.Second
-	const timeoutStatus int32 = 408
-
-	// monitor rdTimeout list to check if request takes longer than timeout
-	// if request timeout occurs than sends data to chQAData channel
-	go monitorRdTimeout(&rdTimeout, timeout, chQAData, timeoutStatus)
+	waitBeforeSave := 15 * time.Second
 
 	for qadata := range chQAData {
 		//qadata.DebugJson()
@@ -54,13 +47,6 @@ func MonitorRequest(chQAData chan *QAJsonData,
 		progress := mState.GetProgress(rdType[qadata.RequestId], qadata)
 		progressCompletion := mState.GetProgressCompletion(rdType[qadata.RequestId], qadata)
 
-		// update rdTimeout with now():
-		// + exclude previous timedout requests
-		// + excludes messages with unkown progress
-		if qadata.Status != timeoutStatus && progress > 0 {
-			rdTimeout[qadata.RequestId] = time.Now()
-		}
-
 		//--------------------------------------------------------------------------
 		// RequestHistory: update log messages
 		//--------------------------------------------------------------------------
@@ -73,22 +59,17 @@ func MonitorRequest(chQAData chan *QAJsonData,
 		// RequestDetails log messages
 		//--------------------------------------------------------------------------
 		rdList[qadata.RequestId] = append(rdList[qadata.RequestId], updateRequestDetails(progress, progressCompletion, qadata))
+
 		// realtime update of the details cache
 		SaveCacheRequestDetails(qadata.RequestId, rdList[qadata.RequestId], cacheDetails)
 		updateWSDetails(rdList[qadata.RequestId], chWSHist)
 		//--------------------------------------------------------------------------
 
-		// RequestDetails: send data to channel if all 6 messages arrived (QAMsg1...QAMsg6)
-		// NOTE: this is required due to the async nature of log messages: e.g.:
-		// QAMsg2 -> QAMsg3 -> QAMsg4 -> QAMsg1 -> QAMsg6 -> QAMsg5
-		if checkRequestDetailsCompleteSequence(rdType[qadata.RequestId], rdList[qadata.RequestId]) ||
-			qadata.Status == timeoutStatus {
-
+		// RequestDetails: send data to channel if last message arrived (QAMsg6)
+		if checkRequestDetailsLastMsg(rdType[qadata.RequestId], rdList[qadata.RequestId]) {
 			// re-order RequestDetails data
 			//rdList[qadata.RequestId] = orderbystepRequestDetails(rdList[qadata.RequestId])
 
-			// resets rdTimeout, to be deleted by the monitor process
-			rdTimeout[qadata.RequestId] = time.Time{}
 			if _, ok := reqCompleted[qadata.RequestId]; !ok {
 				// request is in the process to be complete (completed when true)
 				reqCompleted[qadata.RequestId] = false
@@ -221,7 +202,7 @@ func ReadRequestDetailsToCache(client *sarama.Client, topic string, cacheDetails
 		return 0
 	}
 
-	lastn := int64(5000)
+	lastn := int64(2000)
 	ch := make(chan *kafka.ConsumerData)
 	go kafka.ConsumeLastN(client, topic, 0, lastn, ch)
 

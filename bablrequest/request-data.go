@@ -15,7 +15,7 @@ type RequestHistory struct {
 	Supervisor    string    `json:"supervisor"`
 	Module        string    `json:"module"`
 	ModuleVersion string    `json:"moduleversion"`
-	Status        int32     `json:"status"`
+	Status        string    `json:"status"`
 	Duration      float64   `json:"duration_ms"`
 }
 
@@ -43,7 +43,7 @@ func (reqhist *RequestHistory) UnmarshalJSON(data []byte) error {
 	reqhist.Supervisor = getFieldDataString(Z["supervisor"])
 	reqhist.Module = getFieldDataString(Z["module"])
 	reqhist.ModuleVersion = getFieldDataString(Z["moduleversion"])
-	reqhist.Status = getFieldDataInt32(Z["status"])
+	reqhist.Status = getFieldDataString(Z["status"])
 	reqhist.Duration = getFieldDataFloat64(Z["duration_ms"])
 	return err
 }
@@ -65,7 +65,7 @@ func (reqdet *RequestDetails) ManualUnmarshalJSON(Z map[string]interface{}) erro
 	reqdet.Supervisor = getFieldDataString(Z["supervisor"])
 	reqdet.Module = getFieldDataString(Z["module"])
 	reqdet.ModuleVersion = getFieldDataString(Z["moduleversion"])
-	reqdet.Status = getFieldDataInt32(Z["status"])
+	reqdet.Status = getFieldDataString(Z["status"])
 	reqdet.Duration = getFieldDataFloat64(Z["duration_ms"])
 
 	reqdet.Host = getFieldDataString(Z["host"])

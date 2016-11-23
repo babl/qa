@@ -108,7 +108,6 @@ func (this *MessageDefault) Initialize() {
 	this.msg4 = "Producer: message sent"
 	this.msg5 = "New Message Received"
 	this.msg6 = "Module responded"
-	this.msgTimeout = "qa-service detected timeout"
 }
 
 func (this *MessageDefault) FirstQAMsg() int {

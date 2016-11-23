@@ -17,10 +17,9 @@ func ListenToLogsQA(client *sarama.Client, topic string, chQAData chan *QAJsonDa
 		qadata := QAJsonData{}
 		err1 := qadata.UnmarshalJSON(msg.Value)
 		Check(err1)
-		//qadata.DebugJson() // NOTE: can also debug rid=0
+		//qadata.DebugJson()
 
 		if len(qadata.RequestId) > 0 {
-			//qadata.DebugJson()
 			go func() { chQAData <- &qadata }()
 		}
 		msg.Processed <- "success"

@@ -3,7 +3,6 @@ package bablrequest
 import (
 	"encoding/json"
 	"sort"
-	"time"
 )
 
 func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory {
@@ -19,7 +18,7 @@ func updateRequestHistory(qadata *QAJsonData, rh RequestHistory) RequestHistory 
 	if data.ModuleVersion == "" && qadata.ModuleVersion != "" {
 		data.ModuleVersion = qadata.ModuleVersion
 	}
-	if qadata.Status != 0 {
+	if qadata.Status != "" {
 		data.Status = qadata.Status
 	}
 	if data.Duration <= qadata.Duration {
@@ -88,8 +87,9 @@ func orderbystepRequestDetails(rdOrigin []RequestDetails) []RequestDetails {
 	// adjust optional messages Step == 0 to sequencial step > 100
 	var optionalMessageStep = int(100)
 	for i, reqdet := range rdOrigin {
-		if reqdet.Step == 0 {
+		if reqdet.Step == 999 {
 			rdOrigin[i].Step = optionalMessageStep
+			rdOrigin[i].Progress = "+"
 			optionalMessageStep++
 		}
 	}
@@ -146,33 +146,6 @@ func checkRequestDetailsCompleteSequence(msgType int, rdOrigin []RequestDetails)
 		}
 	}
 	return result
-}
-
-func monitorRdTimeout(rdTL *map[string]time.Time, timeout time.Duration, chQAData chan *QAJsonData, statuscode int32) {
-	for {
-		timer1 := time.NewTimer(time.Second)
-		<-timer1.C
-		for k, v := range *rdTL {
-			// verify if request was completed with success
-			if v == (time.Time{}) {
-				delete(*rdTL, k)
-			} else {
-				elapsed := time.Since(v)
-				if elapsed > timeout {
-					timeoutData := QAJsonData{}
-					timeoutData.RequestId = k
-					timeoutData.Duration = float64(elapsed) / float64(time.Millisecond)
-					timeoutData.Level = "error"
-					timeoutData.Status = statuscode
-					timeoutData.Timestamp = time.Now()
-					timeoutData.Message = "qa-service detected timeout!"
-					timeoutData.Error = "QA-Service: Internal timer detected timeout!"
-					chQAData <- &timeoutData
-					delete(*rdTL, k)
-				}
-			}
-		}
-	}
 }
 
 func updateWSHistory(rh RequestHistory, chWSHist chan *[]byte) {
