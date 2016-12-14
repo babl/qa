@@ -13,7 +13,7 @@ import (
 	cache "github.com/muesli/cache2go"
 )
 
-const cacheDefaultExpiration = 7 * 24 * time.Hour
+const cacheDefaultExpiration = 24 * time.Hour
 
 func MonitorRequest(chQAData chan *QAJsonData,
 	chHist chan *RequestHistory, chWSHist chan *[]byte,

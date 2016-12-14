@@ -58,12 +58,15 @@ function tableDataUpdateItem(item) {
     status_style = "style=\"display: none;\""
   }
   var duration_color;
-  if (item.duration_ms < 1000) {
+  if (item.duration_ms >= 1 && item.duration_ms < 30000) {
     duration_color = duration_green;
-  } else if (item.duration_ms >= 1000 && item.duration_ms < 2000) {
+    console.log("green", item.duration_ms);
+  } else if (item.duration_ms >= 30000 && item.duration_ms < 40000) {
     duration_color = duration_orange;
+    console.log("orange", item.duration_ms);
   } else {
     duration_color = duration_red;
+    console.log("red", item.duration_ms);
   }
   var tableBodyContent =
     "<tbody id=\""+item.rid+"\" class=\"bodycontent "+status_class+"\" "+status_style+">"+
@@ -113,7 +116,7 @@ function tableDataUpdateItemDetails(data) {
   }
   var tableDetailsRow = $('#tbase-'+data[0].rid);
   if (tableDetailsRow.length > 0) {
-    updateRequestDetails(data);
+    updateRequestDetails(data[0].rid, data);
   }
 }
 
@@ -171,7 +174,11 @@ function parseTime(duration_ms){
   return time
 }
 
-function updateRequestDetails(data) {
+function updateRequestDetails(rid, data) {
+  if (data.length == 0 || !data[0].hasOwnProperty("rid")) {
+    $("#icon-"+rid).removeClass("glyphicon-plus").addClass("glyphicon-ban-circle").css("color","red");
+    return;
+  }
   var rid = data[0].rid;
   var tableDetailsRow = $('#tbase-'+rid);
   if (tableDetailsRow.length > 0) {
@@ -268,7 +275,7 @@ function getRequestDetails(rid) {
     format: "json"
   })
   .done(function(data) {
-    updateRequestDetails(data);
+    updateRequestDetails(rid, data);
   });
 }
 
