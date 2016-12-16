@@ -60,13 +60,10 @@ function tableDataUpdateItem(item) {
   var duration_color;
   if (item.duration_ms >= 1 && item.duration_ms < 30000) {
     duration_color = duration_green;
-    console.log("green", item.duration_ms);
   } else if (item.duration_ms >= 30000 && item.duration_ms < 40000) {
     duration_color = duration_orange;
-    console.log("orange", item.duration_ms);
   } else {
     duration_color = duration_red;
-    console.log("red", item.duration_ms);
   }
   var tableBodyContent =
     "<tbody id=\""+item.rid+"\" class=\"bodycontent "+status_class+"\" "+status_style+">"+
