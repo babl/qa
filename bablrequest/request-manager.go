@@ -14,6 +14,7 @@ import (
 )
 
 const cacheDefaultExpiration = 24 * time.Hour
+const cacheMaxData = 2500
 
 func MonitorRequest(chQAData chan *QAJsonData,
 	chHist chan *RequestHistory, chWSHist chan *[]byte,
@@ -163,7 +164,12 @@ func SaveCacheRequestDetails(requestID string, rdOrigin []RequestDetails,
 	cacheDetails *cache.CacheTable) {
 	rhJson, _ := json.Marshal(rdOrigin)
 	//fmt.Printf("%s\n", rhJson)
+	if cacheDetails.Count() > cacheMaxData {
+		log.Warn("Cache max data reached, flushing cache: ", cacheDetails.Count())
+		cacheDetails.Flush()
+	}
 	cacheDetails.Add(requestID, cacheDefaultExpiration, rhJson)
+	//fmt.Printf("Cache Count = %d\n", cacheDetails.Count())
 }
 
 func ReadRequestDetailsFromCache(requestid string, cacheDetails *cache.CacheTable) []byte {
@@ -191,6 +197,31 @@ func ReadRequestDetailsFromCache(requestid string, cacheDetails *cache.CacheTabl
 	}
 	rdJson, _ := json.Marshal(rdList)
 	return rdJson
+}
+
+func _ReadRequestDetailsFromCache(requestid string, cacheDetails *cache.CacheTable) []RequestDetails {
+	log.Debug("Reading from cache: Details %d", cacheDetails.Count())
+
+	value, err := cacheDetails.Value(requestid)
+	if err != nil {
+		rdList := []RequestDetails{}
+		return rdList
+	}
+	valueData := value.Data()
+	valueByte := valueData.([]byte)
+
+	var arraymap []map[string]interface{}
+	err1 := json.Unmarshal(valueByte, &arraymap)
+	Check(err1)
+
+	rdList := []RequestDetails{}
+	for _, v := range arraymap {
+		reqdet := RequestDetails{}
+		reqdet.ManualUnmarshalJSON(v)
+		//reqdet.Debug()
+		rdList = append(rdList, reqdet)
+	}
+	return rdList
 }
 
 func ReadRequestDetailsToCache(client *sarama.Client, topic string, cacheDetails *cache.CacheTable) int {
